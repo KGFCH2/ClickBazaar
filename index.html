@@ -89,6 +89,161 @@
       animation: cartBounce 0.2s ease-in-out;
     }
 
+    /* Heading Animations */
+    @keyframes headingReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.97);
+        filter: blur(8px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes headingGradientShift {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    @keyframes headingLetterSpacing {
+      0% {
+        letter-spacing: 0.05em;
+        opacity: 0;
+      }
+
+      50% {
+        letter-spacing: -0.04em;
+      }
+
+      100% {
+        letter-spacing: -0.05em;
+        opacity: 1;
+      }
+    }
+
+    @keyframes subtitleSlide {
+      0% {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .heading-animate {
+      opacity: 0;
+    }
+
+    .heading-animate.heading-visible {
+      animation: headingReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .heading-animate.heading-visible .heading-gradient-text {
+      background-size: 200% 200%;
+      animation: headingGradientShift 6s ease-in-out infinite;
+      animation-delay: 0.8s;
+    }
+
+    .heading-animate.heading-visible .heading-subtitle {
+      animation: subtitleSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: 0.3s;
+      opacity: 0;
+    }
+
+    .heading-stagger-1 {
+      animation-delay: 0.1s !important;
+    }
+
+    .heading-stagger-2 {
+      animation-delay: 0.2s !important;
+    }
+
+    /* Sub-heading & Card Animations */
+    @keyframes subHeadingFadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes headingSlideIn {
+      0% {
+        opacity: 0;
+        transform: translateX(-15px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes headingPopIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.92);
+        filter: blur(4px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+      }
+    }
+
+    .sub-heading-reveal {
+      opacity: 0;
+    }
+
+    .sub-heading-reveal.heading-visible {
+      animation: subHeadingFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .card-heading-animate {
+      animation: subHeadingFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.15s;
+    }
+
+    .modal-heading-animate {
+      animation: headingPopIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.2s;
+    }
+
+    .page-sub-heading-animate {
+      animation: subHeadingFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.25s;
+    }
+
+    .footer-heading-reveal {
+      opacity: 0;
+    }
+
+    .footer-heading-reveal.heading-visible {
+      animation: headingSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     .animate-ticker {
       animation: tickerScroll 20s linear infinite;
     }
