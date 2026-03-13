@@ -156,14 +156,52 @@ const Badge: React.FC<{ children: React.ReactNode; color?: string }> = ({ childr
   </span>
 );
 
-const SectionHeader: React.FC<{ title: React.ReactNode; subtitle: string; centered?: boolean }> = ({ title, subtitle, centered }) => (
-  <div className={`${centered ? 'text-center' : 'text-left'} mb-8 md:mb-12 animate-fadeIn px-2`}>
-    <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4">{subtitle}</h4>
-    <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+const useScrollReveal = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('heading-visible');
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+};
+
+const SectionHeader: React.FC<{ title: React.ReactNode; subtitle: string; centered?: boolean }> = ({ title, subtitle, centered }) => {
+  const revealRef = useScrollReveal();
+  return (
+  <div ref={revealRef} className={`${centered ? 'text-center' : 'text-left'} mb-8 md:mb-12 px-2 heading-animate`}>
+    <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4 heading-subtitle">{subtitle}</h4>
+    <h2 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text">
       {title}
     </h2>
   </div>
-);
+  );
+};
+
+const ScrollReveal: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  const ref = useScrollReveal();
+  return <div ref={ref} className={`heading-animate ${className}`}>{children}</div>;
+};
+
+const ScrollRevealSmall: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  const ref = useScrollReveal();
+  return <div ref={ref} className={`sub-heading-reveal ${className}`}>{children}</div>;
+};
+
+const ScrollRevealFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  const ref = useScrollReveal();
+  return <div ref={ref} className={`footer-heading-reveal ${className}`}>{children}</div>;
+};
 
 // --- Hero Slider Component ---
 
@@ -201,7 +239,7 @@ const HeroSlider: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
       <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-start">
         <div className="max-w-3xl animate-fadeIn">
           <Badge color="bg-blue-600">Premium Curations 2026</Badge>
-          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 md:mt-8 mb-8 md:mb-10 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 md:mt-8 mb-8 md:mb-10 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>
             <span className="block">Elevate Your <br /><span className="italic">Lifestyle.</span></span>
           </h1>
           <p className="text-slate-300 text-base md:text-xl font-medium mb-10 md:mb-12 max-w-lg leading-relaxed">
@@ -506,12 +544,12 @@ export default function App() {
                <div className="absolute top-0 right-0 p-40 bg-rose-500/5 rounded-full blur-[100px]"></div>
                <div className="max-w-7xl mx-auto px-6 relative z-10">
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6">
-                   <div>
+                   <ScrollReveal>
                      <Badge color="bg-rose-500">Accelerated Savings</Badge>
-                     <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-4 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+                     <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-4 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text">
                        Flash <span className="italic">Deals.</span>
                      </h2>
-                   </div>
+                   </ScrollReveal>
                    <div className="flex gap-4">
                       <div className="bg-rose-50 text-rose-600 px-6 md:px-8 py-3 md:py-4 rounded-[20px] md:rounded-[24px] border border-rose-100 font-black text-xs md:text-sm uppercase tracking-widest flex items-center gap-3 shadow-sm">
                         <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" /> 
@@ -535,12 +573,12 @@ export default function App() {
 
             {/* Best Sellers */}
             <div ref={bestSellersRef} className="py-16 md:py-24 max-w-7xl mx-auto px-6">
-              <div className="mb-8 md:mb-12 animate-fadeIn px-2">
-                <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4">Most Coveted</h4>
-                <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+              <ScrollReveal className="mb-8 md:mb-12 px-2">
+                <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4 heading-subtitle">Most Coveted</h4>
+                <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text">
                   <span className="block">Archival <br /><span className="italic">Favorites.</span></span>
                 </h2>
-              </div>
+              </ScrollReveal>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
                 {products.filter(p => p.isBestSeller).slice(0, 8).map(p => (
                   <ProductCard key={p.id} product={p} onAdd={() => addToCart(p.id)} onQuick={() => setQuickView(p)} isWish={wishlist.includes(p.id)} onWish={() => {}} />
@@ -552,10 +590,10 @@ export default function App() {
             <div className="bg-slate-950 py-20 md:py-32 text-white overflow-hidden relative">
                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '40px 40px'}}></div>
                <div className="max-w-7xl mx-auto px-6 relative z-10">
-                  <div className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
-                     <h4 className="text-blue-500 font-black uppercase text-[10px] md:text-xs tracking-[0.4em] mb-4">Curator Voice</h4>
-                     <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent"><span className="block">Verified Archival<br /><span className="italic">Reviews.</span></span></h2>
-                  </div>
+                  <ScrollReveal className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
+                     <h4 className="text-blue-500 font-black uppercase text-[10px] md:text-xs tracking-[0.4em] mb-4 heading-subtitle">Curator Voice</h4>
+                     <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text"><span className="block">Verified Archival<br /><span className="italic">Reviews.</span></span></h2>
+                  </ScrollReveal>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
                      {[
                        { name: "Julian Vance", text: "The Selvedge Denim is unparalleled. Click Bazaar truly understands archival quality and fabric weight.", role: "Fashion Curator", rating: 5 },
@@ -571,7 +609,7 @@ export default function App() {
                           <div className="flex items-center gap-4 md:gap-5">
                              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl md:rounded-3xl bg-blue-600 flex items-center justify-center font-black text-xs md:text-sm shadow-xl shadow-blue-900/20">{rev.name[0]}</div>
                              <div>
-                                <h4 className="font-black text-sm tracking-tight">{rev.name}</h4>
+                                <h4 className="font-black text-sm tracking-tight card-heading-animate">{rev.name}</h4>
                                 <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{rev.role}</span>
                              </div>
                           </div>
@@ -583,12 +621,12 @@ export default function App() {
             
             <div ref={newArrivalsRef} className="bg-white py-16 md:py-24 border-y border-slate-100">
                <div className="max-w-7xl mx-auto px-6">
-                 <div className="mb-8 md:mb-12 animate-fadeIn px-2">
-                   <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4">The Latest Archival Drops</h4>
-                   <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+                 <ScrollReveal className="mb-8 md:mb-12 px-2">
+                   <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4 heading-subtitle">The Latest Archival Drops</h4>
+                   <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text">
                      <span className="block">New <br /><span className="italic">Arrivals.</span></span>
                    </h2>
-                 </div>
+                 </ScrollReveal>
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
                     {products.filter(p => p.isNewArrival).map(p => (
                       <ProductCard key={p.id} product={p} onAdd={() => addToCart(p.id)} onQuick={() => setQuickView(p)} isWish={wishlist.includes(p.id)} onWish={() => {}} />
@@ -647,7 +685,7 @@ export default function App() {
             ) : (
               <div className="py-32 md:py-40 text-center bg-white rounded-[40px] md:rounded-[48px] border-2 border-dashed border-slate-100 flex flex-col items-center px-6">
                 <Heart className="w-12 h-12 md:w-16 md:h-16 text-slate-200 mb-6" />
-                <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-4 tracking-tighter">Your wishlist is empty</h3>
+                <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-4 tracking-tighter page-sub-heading-animate">Your wishlist is empty</h3>
                 <button onClick={() => handleNavigate('shop')} className="bg-slate-950 text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest">Explore Collections</button>
               </div>
             )}
@@ -681,7 +719,7 @@ const OrderSuccessPage = ({ order, onNavigate }: { order: Order | null; onNaviga
         <div className="w-20 h-20 md:w-28 md:h-28 bg-green-500 text-white rounded-[30px] md:rounded-[40px] flex items-center justify-center mx-auto mb-10 md:mb-12 shadow-2xl animate-bounce">
           <CheckCircle className="w-10 h-10 md:w-14 md:h-14" />
         </div>
-        <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-6 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent"><span className="block">Deployment<br /><span className="italic">Successful.</span></span></h2>
+        <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-6 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Deployment<br /><span className="italic">Successful.</span></span></h2>
         <p className="text-slate-500 font-medium mb-10 md:mb-12 max-w-md mx-auto leading-relaxed">Your archival acquisition has been authenticated and initialized. Tracking telemetry is now active for Node {order.id}.</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button onClick={() => onNavigate('shop')} className="bg-slate-950 text-white px-10 md:px-12 py-4 md:py-5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-3">Continue Exploring</button>
@@ -703,7 +741,7 @@ const ProfilePage = ({ user, orders, onNavigate }: { user: User; orders: Order[]
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 md:gap-16">
         <div className="bg-white p-10 md:p-14 rounded-[40px] md:rounded-[60px] shadow-sm border border-slate-100 text-center flex flex-col items-center">
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] md:rounded-[48px] bg-slate-950 text-white flex items-center justify-center text-4xl md:text-5xl font-black mb-8 shadow-2xl">{user.name[0]}</div>
-          <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter mb-2">{user.name}</h3>
+          <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter mb-2 page-sub-heading-animate">{user.name}</h3>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-10">{user.email}</p>
           <div className="w-full space-y-4">
              <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-100 flex justify-between items-center text-left">
@@ -719,7 +757,7 @@ const ProfilePage = ({ user, orders, onNavigate }: { user: User; orders: Order[]
         <div className="lg:col-span-2 space-y-8">
            <div className="bg-slate-950 text-white p-10 md:p-16 rounded-[40px] md:rounded-[60px] shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-              <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 md:mb-10 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent"><span className="block">Archival<br /><span className="italic">Preferences.</span></span></h3>
+              <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 md:mb-10 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Archival<br /><span className="italic">Preferences.</span></span></h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
                  <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Default Currency</label>
@@ -734,7 +772,7 @@ const ProfilePage = ({ user, orders, onNavigate }: { user: User; orders: Order[]
            <div className="flex gap-4">
               <button onClick={() => onNavigate('orders')} className="flex-1 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:border-blue-500 transition-all text-left group">
                  <Package className="w-8 h-8 text-blue-600 mb-6 group-hover:scale-110 transition-transform" />
-                 <h4 className="font-black text-slate-950 uppercase text-xs tracking-widest mb-2">Order Ledger</h4>
+                 <h4 className="font-black text-slate-950 uppercase text-xs tracking-widest mb-2 page-sub-heading-animate">Order Ledger</h4>
                  <p className="text-slate-400 text-[11px] font-medium leading-relaxed">Access full acquisition history and fulfillment documentation.</p>
               </button>
            </div>
@@ -758,7 +796,7 @@ const OrdersPage = ({ orders, onNavigate }: { orders: Order[]; onNavigate: (p: s
                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{order.id}</span>
                      <Badge color="bg-green-500">{order.status}</Badge>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-black text-slate-950 tracking-tight">Archival Batch Deployment</h3>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-950 tracking-tight card-heading-animate">Archival Batch Deployment</h3>
                   <p className="text-slate-400 text-xs md:text-sm font-medium mt-1">Acquired on {new Date(order.createdAt).toLocaleDateString()}</p>
                </div>
             </div>
@@ -772,7 +810,7 @@ const OrdersPage = ({ orders, onNavigate }: { orders: Order[]; onNavigate: (p: s
     ) : (
       <div className="py-24 md:py-40 text-center bg-white rounded-[40px] md:rounded-[60px] border-2 border-dashed border-slate-100 flex flex-col items-center px-6">
          <Package className="w-16 h-16 text-slate-100 mb-8" />
-         <h3 className="text-2xl font-black text-slate-950 mb-4">No acquisitions found</h3>
+         <h3 className="text-2xl font-black text-slate-950 mb-4 page-sub-heading-animate">No acquisitions found</h3>
          <button onClick={() => onNavigate('shop')} className="bg-slate-950 text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest">Initiate Discovery</button>
       </div>
     )}
@@ -792,7 +830,7 @@ const QuickViewModal = ({ product, onClose, onAdd, isWish }: any) => (
            <Badge>{product.category}</Badge>
            {product.isNewArrival && <Badge color="bg-orange-500">NEW ARRIVAL</Badge>}
         </div>
-        <h2 className="text-3xl md:text-5xl font-black text-slate-950 tracking-tighter mb-4 md:mb-6">{product.name}</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-slate-950 tracking-tighter mb-4 md:mb-6 modal-heading-animate">{product.name}</h2>
         <div className="flex items-center gap-6 mb-8 md:mb-10">
            <span className="text-3xl md:text-4xl font-black text-slate-950 tracking-tighter">₹{product.price.toLocaleString()}</span>
            <div className="w-px h-6 bg-slate-200" />
@@ -819,12 +857,12 @@ const SupportPage = ({ onNavigate }: any) => (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div className="bg-white p-8 md:p-10 rounded-[30px] md:rounded-[40px] shadow-sm border border-slate-100">
                     <Mail className="w-8 h-8 md:w-10 md:h-10 text-blue-600 mb-6" />
-                    <h3 className="text-lg md:text-xl font-black mb-2">Digital Inquiry</h3>
+                    <h3 className="text-lg md:text-xl font-black mb-2 page-sub-heading-animate">Digital Inquiry</h3>
                     <p className="text-slate-500 text-sm font-medium leading-relaxed">Reach out via support@clickbazaar.com for standard assistance within 4 hours.</p>
                 </div>
             </div>
             <div className="bg-slate-950 text-white p-8 md:p-12 rounded-[40px] md:rounded-[60px] shadow-2xl">
-                <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent"><span className="block">Frequently<br /><span className="italic">Asked.</span></span></h3>
+                <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Frequently<br /><span className="italic">Asked.</span></span></h3>
                 <div className="space-y-6">
                     <details className="group cursor-pointer">
                         <summary className="font-black text-sm uppercase tracking-widest list-none flex justify-between items-center group-open:text-blue-500">How do I track my shipment? <ChevronDown className="w-4 h-4" /></summary>
@@ -846,7 +884,7 @@ const PrivacyPage = ({ onNavigate }: any) => (
         <SectionHeader title="Privacy Node" subtitle="Data Security" centered />
         <div className="bg-white p-8 md:p-16 rounded-[40px] md:rounded-[60px] shadow-sm border border-slate-100 text-slate-600 font-medium leading-loose text-sm md:text-base">
             <Lock className="w-12 h-12 md:w-16 md:h-16 text-blue-600 mb-8 md:mb-10" />
-            <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-6">Your Security, Our Priority</h3>
+            <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-6 page-sub-heading-animate">Your Security, Our Priority</h3>
             <p className="mb-8">At Click Bazaar, we employ military-grade encryption to protect your identity and transaction history. Every piece of telemetry collected is used solely to enhance your curated experience and ensure logistical precision.</p>
             <ul className="space-y-4 mb-10">
                 <li className="flex gap-4 items-start"><Check className="w-5 h-5 text-blue-600 shrink-0 mt-1" /> No third-party data brokerage of individual identities.</li>
@@ -862,15 +900,15 @@ const TermsPage = ({ onNavigate }: any) => (
     <div className="max-w-4xl mx-auto px-6 py-16 md:py-24 animate-fadeIn">
         <SectionHeader title="Terms of Use" subtitle="User Protocol" centered />
         <div className="bg-slate-50 p-8 md:p-16 rounded-[40px] md:rounded-[60px] border border-slate-200">
-            <h3 className="text-lg md:text-xl font-black text-slate-950 mb-8 uppercase tracking-widest">General protocols</h3>
+            <h3 className="text-lg md:text-xl font-black text-slate-950 mb-8 uppercase tracking-widest page-sub-heading-animate">General protocols</h3>
             <div className="space-y-8 text-slate-500 text-sm leading-relaxed">
                 <p>By accessing the Click Bazaar network, you agree to the protocols defined in our archival agreement. Our services are provided to authenticated curators only.</p>
                 <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100">
-                    <h4 className="font-black text-slate-950 mb-4 text-[10px] md:text-xs uppercase tracking-widest">1. Registration</h4>
+                    <h4 className="font-black text-slate-950 mb-4 text-[10px] md:text-xs uppercase tracking-widest card-heading-animate">1. Registration</h4>
                     <p>Curators must provide valid legal identity identifiers. Multiple account creation for speculative acquisition is strictly prohibited within the ecosystem.</p>
                 </div>
                 <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100">
-                    <h4 className="font-black text-slate-950 mb-4 text-[10px] md:text-xs uppercase tracking-widest">2. Fulfillment</h4>
+                    <h4 className="font-black text-slate-950 mb-4 text-[10px] md:text-xs uppercase tracking-widest card-heading-animate">2. Fulfillment</h4>
                     <p>All logistical estimations are subject to global freight telemetry. Click Bazaar ensures priority handling for all Elite acquisitions.</p>
                 </div>
             </div>
@@ -884,13 +922,13 @@ const LegalPage = ({ onNavigate }: any) => (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <div className="bg-white p-10 md:p-12 rounded-[40px] md:rounded-[50px] shadow-sm border border-slate-100">
                 <Scale className="w-10 h-10 md:w-12 md:h-12 text-blue-600 mb-8" />
-                <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-4 tracking-tighter">Compliance</h3>
+                <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-4 tracking-tighter page-sub-heading-animate">Compliance</h3>
                 <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">Full adherence to international e-commerce regulations and archival standards. Our legal node is continuously audited for transparency.</p>
                 <Badge color="bg-slate-950">Verified</Badge>
             </div>
             <div className="bg-white p-10 md:p-12 rounded-[40px] md:rounded-[50px] shadow-sm border border-slate-100">
                 <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 text-blue-600 mb-8" />
-                <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-4 tracking-tighter">Intellectual Property</h3>
+                <h3 className="text-xl md:text-2xl font-black text-slate-950 mb-4 tracking-tighter page-sub-heading-animate">Intellectual Property</h3>
                 <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">All curated content, archival descriptions, and telemetry interfaces are proprietary assets of Click Bazaar Global Archive.</p>
                 <Badge color="bg-slate-950">Protected</Badge>
             </div>
@@ -907,7 +945,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
     return (
       <div className="max-w-7xl mx-auto px-6 py-24 md:py-40 animate-fadeIn text-center flex flex-col items-center">
         <Radar className="w-16 h-16 md:w-24 md:h-24 text-slate-200 mb-10 animate-pulse" />
-        <h2 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter mb-4">No active shipments detected</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter mb-4 page-sub-heading-animate">No active shipments detected</h2>
         <p className="text-slate-400 mb-10 max-w-sm text-sm md:text-base">Initiate an archival acquisition to activate live tracking telemetry and monitor your fulfillment in real-time.</p>
         <button onClick={() => onNavigate('shop')} className="bg-slate-950 text-white px-10 md:px-12 py-4 md:py-5 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-colors shadow-2xl">Shop Collections</button>
       </div>
@@ -917,12 +955,12 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
   return (
     <div className="max-w-7xl mx-auto px-6 py-16 md:py-24 animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-8">
-        <div>
-           <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.4em] mb-4">Logistics Node</h4>
-           <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+        <ScrollReveal>
+           <h4 className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-[0.4em] mb-4 heading-subtitle">Logistics Node</h4>
+           <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>
              <span className="block">Live<br /><span className="italic">Telemetry.</span></span>
            </h1>
-        </div>
+        </ScrollReveal>
         <div className="flex gap-4">
            <div className="bg-white px-6 md:px-8 py-4 md:py-5 rounded-[24px] md:rounded-[28px] border border-slate-100 shadow-sm flex items-center gap-4">
               <div className="w-3 h-3 rounded-full bg-green-500 animate-ping"></div>
@@ -936,7 +974,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
            <div className="flex flex-col md:flex-row justify-between items-start mb-12 md:mb-16 gap-6">
               <div>
                 <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest block mb-1">Archive ID: {latestOrder.id}</span>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter">In Transit - Hub Departure</h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tighter card-heading-animate">In Transit - Hub Departure</h3>
               </div>
               <Badge color="bg-orange-500">Accelerated Fulfillment</Badge>
            </div>
@@ -954,7 +992,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
                     {step.active ? <Truck className="w-5 h-5" /> : <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-current" />}
                   </div>
                   <div className="flex-1">
-                    <h4 className={`font-black text-base md:text-lg tracking-tight ${step.active ? 'text-slate-950' : 'text-slate-400'}`}>{step.status}</h4>
+                    <h4 className={`font-black text-base md:text-lg tracking-tight card-heading-animate ${step.active ? 'text-slate-950' : 'text-slate-400'}`}>{step.status}</h4>
                     <p className="text-xs md:text-sm font-medium text-slate-400 mt-1">{step.detail}</p>
                   </div>
                   <div className="text-right shrink-0">
@@ -968,7 +1006,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
         <div className="space-y-8 md:space-y-12">
            <div className="bg-slate-950 text-white p-8 md:p-12 rounded-[36px] md:rounded-[50px] shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              <h4 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent"><span className="block">Courier<br /><span className="italic">Profile.</span></span></h4>
+              <h4 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Courier<br /><span className="italic">Profile.</span></span></h4>
               <div className="flex items-center gap-5 md:gap-6 mb-10">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-[20px] md:rounded-[24px] bg-white/5 flex items-center justify-center border border-white/10 shadow-inner"><UserIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-500" /></div>
                 <div>
@@ -980,7 +1018,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
            </div>
            
            <div className="bg-white border border-slate-100 p-8 md:p-12 rounded-[36px] md:rounded-[50px] shadow-sm">
-              <h4 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent"><span className="block">Terminal<br /><span className="italic">Destination.</span></span></h4>
+              <h4 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Terminal<br /><span className="italic">Destination.</span></span></h4>
               <div className="flex gap-4 md:gap-5">
                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-blue-50 flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 md:w-6 md:h-6 text-blue-600" /></div>
                  <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed pt-1">
@@ -1016,7 +1054,9 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
 
       <div className="grid grid-cols-2 md:grid-cols-1 gap-12 md:gap-16">
         <div>
-          <h4 className="font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-slate-400 mb-8 md:mb-12">Customer Command</h4>
+          <ScrollRevealFooter>
+            <h4 className="font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-slate-400 mb-8 md:mb-12">Customer Command</h4>
+          </ScrollRevealFooter>
           <ul className="space-y-4 md:space-y-6">
             <li><button onClick={() => onNavigate('tracking')} className="text-[10px] md:text-xs font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-3"><Radar className="w-4 h-4" /> Live Tracking</button></li>
             <li><button onClick={() => onNavigate('orders')} className="text-[10px] md:text-xs font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-3"><Package className="w-4 h-4" /> Purchase Archive</button></li>
@@ -1025,7 +1065,9 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
           </ul>
         </div>
         <div className="md:hidden">
-          <h4 className="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-8">Support</h4>
+          <ScrollRevealFooter>
+            <h4 className="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-8">Support</h4>
+          </ScrollRevealFooter>
           <ul className="space-y-4">
              <li><button onClick={() => onNavigate('support')} className="text-[10px] font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">Support Center</button></li>
              <li><button onClick={() => onNavigate('legal')} className="text-[10px] font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">Legal Archive</button></li>
@@ -1034,7 +1076,9 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
       </div>
 
       <div className="hidden lg:block">
-        <h4 className="font-black text-[11px] uppercase tracking-[0.3em] text-slate-400 mb-12">Archives & Info</h4>
+        <ScrollRevealFooter>
+          <h4 className="font-black text-[11px] uppercase tracking-[0.3em] text-slate-400 mb-12">Archives & Info</h4>
+        </ScrollRevealFooter>
         <ul className="space-y-6">
           <li><button onClick={() => onNavigate('support')} className="text-xs font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">Support Center</button></li>
           <li><button onClick={() => onNavigate('legal')} className="text-xs font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">Legal Archive</button></li>
@@ -1117,7 +1161,7 @@ const AdminDashboard = ({ users, orders, sessions, products, onLogout, onNavigat
       <main className="flex-1 p-6 md:p-12 overflow-y-auto relative custom-scrollbar">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 md:mb-16 gap-6">
           <div>
-            <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] capitalize bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent"><span className="block">{activeTab}<br /><span className="italic">Interface.</span></span></h1>
+            <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] capitalize bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">{activeTab}<br /><span className="italic">Interface.</span></span></h1>
             <p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-2">Real-time system diagnostics</p>
           </div>
           <div className="flex gap-4">
@@ -1229,7 +1273,7 @@ const AdminDashboard = ({ users, orders, sessions, products, onLogout, onNavigat
                  <div className="flex flex-col md:flex-row h-full overflow-hidden">
                     <div className="md:w-1/3 bg-slate-50 p-8 md:p-12 flex flex-col items-center text-center border-r border-slate-100 overflow-y-auto shrink-0">
                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] md:rounded-[48px] bg-slate-950 text-white flex items-center justify-center text-4xl md:text-5xl font-black mb-8 shadow-2xl rotate-3 shrink-0">{selectedUser.name[0]}</div>
-                       <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-3 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">{selectedUser.name}</h2>
+                       <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-3 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>{selectedUser.name}</h2>
                        <p className="text-slate-400 font-bold uppercase text-[9px] md:text-[10px] tracking-widest mb-8 md:mb-10 px-4 py-2 bg-white rounded-full border border-slate-100 truncate w-full">{selectedUser.email}</p>
                        
                        <div className="w-full space-y-4">
@@ -1247,7 +1291,7 @@ const AdminDashboard = ({ users, orders, sessions, products, onLogout, onNavigat
                     <div className="flex-1 p-8 md:p-16 overflow-y-auto custom-scrollbar">
                        <div className="grid grid-cols-1 gap-12 md:gap-16">
                           <div>
-                             <h4 className="font-black text-[10px] md:text-xs uppercase tracking-[0.3em] text-blue-600 mb-6 md:mb-8 flex items-center gap-3">
+                             <h4 className="font-black text-[10px] md:text-xs uppercase tracking-[0.3em] text-blue-600 mb-6 md:mb-8 flex items-center gap-3 card-heading-animate">
                                <Activity className="w-4 h-4 md:w-5 md:h-5" /> Interaction Telemetry
                              </h4>
                              <div className="space-y-3 md:space-y-4">
@@ -1266,7 +1310,7 @@ const AdminDashboard = ({ users, orders, sessions, products, onLogout, onNavigat
                           </div>
 
                           <div>
-                             <h4 className="font-black text-[10px] md:text-xs uppercase tracking-[0.3em] text-blue-600 mb-6 md:mb-8 flex items-center gap-3">
+                             <h4 className="font-black text-[10px] md:text-xs uppercase tracking-[0.3em] text-blue-600 mb-6 md:mb-8 flex items-center gap-3 card-heading-animate">
                                <CreditCard className="w-4 h-4 md:w-5 md:h-5" /> Ledger History
                              </h4>
                              <div className="space-y-4 md:space-y-6">
@@ -1319,7 +1363,7 @@ const AuthView = ({ mode, onAuth, onToggle }: { mode: 'login' | 'signup', onAuth
         <div className="bg-slate-950 w-16 h-16 md:w-24 md:h-24 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto mb-8 md:mb-12 text-white shadow-2xl rotate-12">
            {mode === 'login' ? <LogIn className="w-8 h-8 md:w-10 md:h-10" /> : <UserPlus className="w-8 h-8 md:w-10 md:h-10" />}
         </div>
-        <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-4 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+        <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-4 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>
           <span className="block">{mode === 'login' ? <>Identity<br /><span className="italic">Portal.</span></> : <>Register<br /><span className="italic">Node.</span></>}</span>
         </h2>
         
@@ -1394,7 +1438,7 @@ const ProductCard: React.FC<{product: Product; onAdd: () => void; onQuick: () =>
     </div>
     <div className="p-6 md:p-10 flex flex-col flex-1">
       <div className="flex justify-between items-start mb-2 md:mb-3">
-        <h3 className="text-lg md:text-xl font-black text-slate-950 tracking-tight leading-tight group-hover:text-blue-600 transition-colors">{product.name}</h3>
+        <h3 className="text-lg md:text-xl font-black text-slate-950 tracking-tight leading-tight group-hover:text-blue-600 transition-colors card-heading-animate">{product.name}</h3>
         <div className="text-right shrink-0">
            <span className="text-base md:text-xl font-black text-slate-950 tracking-tighter block">₹{product.price.toLocaleString('en-IN')}</span>
            {product.discount && <span className="text-[9px] md:text-[11px] font-bold text-slate-300 line-through">₹{(Math.round(product.price / (1 - product.discount/100))).toLocaleString()}</span>}
@@ -1416,7 +1460,7 @@ const CartPage = ({ cart, products, onRemove, onCheckout, onNavigate }: any) => 
   const total = items.reduce((a: number, b: any) => a + (b.product.price * b.quantity), 0);
   return (
     <div className="max-w-7xl mx-auto px-6 py-16 md:py-24 animate-fadeIn">
-      <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-12 md:mb-20 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+      <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-12 md:mb-20 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>
         Curated <span className="italic">Bag</span>
       </h2>
       {items.length > 0 ? (
@@ -1429,7 +1473,7 @@ const CartPage = ({ cart, products, onRemove, onCheckout, onNavigate }: any) => 
                   <div className="flex justify-between items-start">
                     <div>
                        <Badge color="bg-blue-600/10 !text-blue-600 mb-3">{item.product.category}</Badge>
-                       <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight leading-tight">{item.product.name}</h3>
+                       <h3 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight leading-tight card-heading-animate">{item.product.name}</h3>
                     </div>
                     <button onClick={() => onRemove(item.productId)} className="p-3 md:p-4 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-sm"><Trash2 className="w-5 h-5 md:w-6 md:h-6" /></button>
                   </div>
@@ -1446,7 +1490,7 @@ const CartPage = ({ cart, products, onRemove, onCheckout, onNavigate }: any) => 
           </div>
           <div className="bg-slate-950 p-8 md:p-16 rounded-[40px] md:rounded-[70px] text-white shadow-2xl h-fit sticky top-28 overflow-hidden relative">
              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-             <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-10 md:mb-12 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent"><span className="block"><span className="italic">Summary.</span></span></h3>
+             <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-10 md:mb-12 bg-gradient-to-br from-white via-slate-100 to-blue-400 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block"><span className="italic">Summary.</span></span></h3>
              <div className="space-y-4 md:space-y-6 mb-10 md:mb-12">
                 <div className="flex justify-between items-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest">
                    <span>Archival Value</span><span>₹{total.toLocaleString()}</span>
@@ -1464,7 +1508,7 @@ const CartPage = ({ cart, products, onRemove, onCheckout, onNavigate }: any) => 
       ) : (
         <div className="py-24 md:py-40 text-center bg-white rounded-[40px] md:rounded-[70px] border-2 border-dashed border-slate-100 flex flex-col items-center px-6">
            <ShoppingCart className="w-16 h-16 md:w-24 md:h-24 text-slate-100 mb-8 md:mb-10" />
-           <h3 className="text-3xl md:text-4xl font-black text-slate-950 mb-4 md:mb-6 tracking-tighter">Your Archive is Empty</h3>
+           <h3 className="text-3xl md:text-4xl font-black text-slate-950 mb-4 md:mb-6 tracking-tighter page-sub-heading-animate">Your Archive is Empty</h3>
            <p className="text-slate-400 mb-10 md:mb-12 max-w-sm font-medium text-sm md:text-base">Begin your premium acquisition journey by exploring our world-class collections.</p>
            <button onClick={() => onNavigate('shop')} className="bg-slate-950 text-white px-10 md:px-14 py-4 md:py-6 rounded-full font-black text-[9px] md:text-[11px] uppercase tracking-[0.3em] hover:bg-blue-600 transition-all shadow-2xl">Explore Collections</button>
         </div>
@@ -1490,7 +1534,7 @@ const CheckoutPage = ({ cart, products, onComplete, onBack }: any) => {
       </button>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-24">
         <div>
-          <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-10 md:mb-12 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent">
+          <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-10 md:mb-12 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}>
             <span className="block">Shipping<br /><span className="italic">Node.</span></span>
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
@@ -1543,7 +1587,7 @@ const CheckoutPage = ({ cart, products, onComplete, onBack }: any) => {
         </div>
         <div>
            <div className="bg-slate-50 p-8 md:p-12 rounded-[40px] md:rounded-[60px] border border-slate-100">
-              <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 md:mb-10 border-b border-slate-200 pb-6 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent"><span className="block">Acquisition<br /><span className="italic">Pool.</span></span></h3>
+              <h3 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mb-8 md:mb-10 border-b border-slate-200 pb-6 bg-gradient-to-br from-slate-950 via-slate-800 to-blue-700 bg-clip-text text-transparent heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">Acquisition<br /><span className="italic">Pool.</span></span></h3>
               <div className="space-y-6 md:space-y-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {items.map((item: any) => (
                   <div key={item.product.id} className="flex justify-between items-center bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
