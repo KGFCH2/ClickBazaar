@@ -1,70 +1,103 @@
-# Click Bazaar
+# 🛍️ Click Bazaar
 
-A premium e-commerce web application built with React, TypeScript, and the Gemini AI API. Click Bazaar features a curated catalog of 20 products across 15 categories with an elegant, modern UI.
+A **premium e-commerce web application** built with **React, TypeScript, and the Gemini AI API**.
+Click Bazaar features a **curated catalog of 20 products across 15 categories** with an elegant, modern UI.
 
-## Features
+---
 
-- **Product Catalog** — Browse 20 curated products across 15 categories (Grocery, Fashion, Mobile, Electronics, Beauty, Home, and more)
-- **Category Filtering & Search** — Filter products by category tabs and search by name
-- **Quick View** — Hover-to-preview product details without leaving the page
-- **Cart & Checkout** — Full shopping flow with shipping address form and order confirmation
-- **Wishlist** — Save favourite products with localStorage persistence
-- **Live Order Tracking** — Visual shipment timeline with courier and destination info
-- **User Profiles** — Curator profile with total spend, acquisition count, and preferences
-- **Order History** — View past purchases with status and details
-- **AI-Powered Descriptions** — Generate product descriptions via Google Gemini AI
-- **Smart Recommendations** — AI-suggested complementary products based on cart contents
-- **Admin Dashboard** — Session logs, user registry, and order ledger (login with `admin@clickbazaar.com`)
-- **Responsive Design** — Mobile-friendly with adaptive navigation and layouts
+# ✨ Features
 
-## Tech Stack
+* 🛒 **Product Catalog** — Browse **20 curated products** across **15 categories** (Grocery, Fashion, Mobile, Electronics, Beauty, Home, and more)
+* 🔍 **Category Filtering & Search** — Filter products by category tabs and search by name
+* ⚡ **Quick View** — Hover-to-preview product details without leaving the page
+* 💳 **Cart & Checkout** — Full shopping flow with shipping address form and order confirmation
+* ❤️ **Wishlist** — Save favourite products with **localStorage persistence**
+* 🚚 **Live Order Tracking** — Visual shipment timeline with courier and destination info
+* 👤 **User Profiles** — Curator profile with total spend, acquisition count, and preferences
+* 📦 **Order History** — View past purchases with status and details
+* 🤖 **AI-Powered Descriptions** — Generate product descriptions using **Google Gemini AI**
+* 🧠 **Smart Recommendations** — AI-suggested complementary products based on cart contents
+* 🛠️ **Admin Dashboard** — Session logs, user registry, and order ledger
+  🔑 Login with: `admin@clickbazaar.com`
+* 📱 **Responsive Design** — Mobile-friendly UI with adaptive navigation and layouts
 
-- **React 19** + **TypeScript 5.8**
-- **Vite 6** — Dev server and build tool
-- **Tailwind CSS** — Utility-first styling
-- **Lucide React** — Icon library
-- **Recharts** — Dashboard charts
-- **Google Gemini AI** (`gemini-3-flash-preview`) — AI product descriptions and recommendations
-- **Plus Jakarta Sans** — Typography via Google Fonts
+---
 
-## Product Categories
+# ⚙️ Tech Stack
 
-Grocery · Fashion · Mobile · Electronics · Beauty · Home · Men's Wear · Men's Watches · Women's Wear · Women's Watches · Shoes · Luxury · Wellness · Gadgets · Accessories
+* ⚛️ **React 19**
+* 🟦 **TypeScript 5.8**
+* ⚡ **Vite 6** — Dev server and build tool
+* 🎨 **Tailwind CSS** — Utility-first styling
+* 🧩 **Lucide React** — Icon library
+* 📊 **Recharts** — Dashboard charts
+* 🤖 **Google Gemini AI** (`gemini-3-flash-preview`) — AI product descriptions and recommendations
+* ✍️ **Plus Jakarta Sans** — Typography via Google Fonts
 
-## Local Assets
+---
 
-Product images are sourced from Unsplash, with the following served locally from `public/images/`:
+# 🛍️ Product Categories
 
-| File | Usage |
-|---|---|
+🥬 Grocery · 👗 Fashion · 📱 Mobile · 💻 Electronics · 💄 Beauty · 🏠 Home
+👔 Men's Wear · ⌚ Men's Watches · 👗 Women's Wear · ⌚ Women's Watches
+👟 Shoes · 💎 Luxury · 🌿 Wellness · 🔌 Gadgets · 🎒 Accessories
+
+---
+
+# 🖼️ Local Assets
+
+Product images are sourced from **Unsplash**, with the following served locally from `public/images/`.
+
+| 📁 File                 | 📝 Usage                        |
+| ----------------------- | ------------------------------- |
 | `bohemian-loom-rug.jpg` | Bohemian Loom Rug product image |
-| `hero1.jpg` | Hero slider |
-| `hero2.jpg` | Hero slider |
-| `hero3.jpg` | Hero slider |
-| `hero4.png` | Hero slider |
+| `hero1.jpg`             | Hero slider                     |
+| `hero2.jpg`             | Hero slider                     |
+| `hero3.jpg`             | Hero slider                     |
+| `hero4.png`             | Hero slider                     |
 
-## Run Locally
+---
 
-**Prerequisites:** Node.js
+# 🚀 Run Locally
 
-1. Install dependencies:
-   ```
+### 📌 Prerequisites
 
-   npm install
-   ```
-   
-2. Set the `GEMINI_API_KEY` in `.env.local` to your Gemini API key
-3. Run the app:
-   ```
+* Node.js installed
 
-   
-   npm run dev
-   ```
+### 1️⃣ Install dependencies
 
-## Scripts
+```
+npm install
+```
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
+### 2️⃣ Add Gemini API key
+
+Set your API key inside:
+
+```
+.env.local
+```
+
+```
+GEMINI_API_KEY=your_api_key_here
+```
+
+### 3️⃣ Run the development server
+
+```
+npm run dev
+```
+
+---
+
+# 📜 Scripts
+
+| 🖥️ Command       | 📄 Description           |
+| ----------------- | ------------------------ |
+| `npm run dev`     | Start development server |
+| `npm run build`   | Production build         |
 | `npm run preview` | Preview production build |
+
+---
+
+⭐ Made by **Debasmita**
