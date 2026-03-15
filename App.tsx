@@ -92,6 +92,53 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence, useReduced
 
 // --- Advanced Feature Components ---
 
+const ScrollStyles = () => (
+  <style>{`
+    .heading-animate {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .heading-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @keyframes headingGradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .heading-gradient-text {
+      background-size: 200% 200%;
+    }
+    .nav-link {
+      position: relative;
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #1e293b;
+      transition: color 0.3s;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -4px;
+      left: 0;
+      background-color: #2563eb;
+      transition: width 0.3s;
+    }
+    .nav-link:hover {
+      color: #2563eb;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+  `}</style>
+);
+
 const DataVisGrid = () => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-20 px-6 max-w-7xl mx-auto">
     {[
@@ -118,16 +165,29 @@ export const SiteLoader = ({ message = "Click Bazaar" }: { message?: string }) =
   const content = (
     <div className="fixed inset-0 z-[99999] bg-amber-50 flex flex-col items-center justify-center overflow-hidden font-['Comic_Sans_MS',_cursive]">
       <style>{`
-      .loader-stage { position: relative; width: 350px; height: 400px; display: flex; flex-direction: column; opacity: 0; animation: stage-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .loader-stage { 
+        position: relative; 
+        width: 100%; 
+        max-width: 400px; 
+        min-height: 500px;
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center;
+        opacity: 0; 
+        animation: stage-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+        padding: 20px;
+        box-sizing: border-box;
+      }
       @keyframes stage-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       
-      .main-basket { position: relative; margin: 0 auto; z-index: 20; animation: float-basket 3s ease-in-out infinite; }
+      .main-basket { position: relative; margin: 60px auto 0; z-index: 20; animation: float-basket 3s ease-in-out infinite; }
       @keyframes float-basket { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(3deg); } }
       
       .basket-glow { position: absolute; inset: -30px; background: radial-gradient(circle, rgba(30,64,175,0.2) 0%, transparent 70%); border-radius: 50%; filter: blur(20px); animation: pulse-glow 3s ease-in-out infinite; }
       @keyframes pulse-glow { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.3); } }
 
-      .conveyor-belt { position: absolute; top: -160px; left: 50%; transform: translateX(-50%); width: 80px; height: 350px; z-index: 10; }
+      .conveyor-belt { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 80px; height: 300px; z-index: 10; }
       .falling-item { position: absolute; top: 0; left: 50%; transform: translateX(-50%); opacity: 0; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
       
       .item-anim { animation: drop-into-bag 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
@@ -139,12 +199,12 @@ export const SiteLoader = ({ message = "Click Bazaar" }: { message?: string }) =
       @keyframes drop-into-bag {
         0% { transform: translate(-50%, -60px) scale(0) rotate(-45deg); opacity: 0; }
         10% { transform: translate(-50%, 0) scale(1.2) rotate(0deg); opacity: 1; }
-        40% { transform: translate(-50%, 180px) scale(1) rotate(15deg); opacity: 1; }
-        50% { transform: translate(-50%, 200px) scale(0); opacity: 0; filter: blur(8px); }
-        100% { transform: translate(-50%, 200px) scale(0); opacity: 0; }
+        40% { transform: translate(-50%, 160px) scale(1) rotate(15deg); opacity: 1; }
+        50% { transform: translate(-50%, 180px) scale(0); opacity: 0; filter: blur(8px); }
+        100% { transform: translate(-50%, 180px) scale(0); opacity: 0; }
       }
 
-      .impact-waves { position: absolute; top: 200px; left: 50%; transform: translateX(-50%); width: 140px; height: 50px; }
+      .impact-waves { position: absolute; top: 180px; left: 50%; transform: translateX(-50%); width: 140px; height: 50px; }
       .wave { position: absolute; inset: 0; border: 3px solid #1e40af; border-radius: 50%; opacity: 0; animation: wave-emit 3.2s linear infinite; }
       .w-1 { animation-delay: 0.5s; }
       .w-2 { animation-delay: 1.3s; }
@@ -190,7 +250,7 @@ export const SiteLoader = ({ message = "Click Bazaar" }: { message?: string }) =
         </div>
 
         <div className="mt-10 text-center px-4">
-          <h2 className="text-4xl font-black text-blue-900 tracking-tighter mb-2 scale-110">
+          <h2 className="text-3xl md:text-4xl font-black text-blue-900 tracking-tighter mb-2">
             {message}
           </h2>
           
@@ -251,12 +311,12 @@ const useScrollReveal = () => {
   return ref;
 };
 
-const SectionHeader: React.FC<{ title: React.ReactNode; subtitle: string; centered?: boolean }> = ({ title, subtitle, centered }) => {
+const SectionHeader: React.FC<{ title: React.ReactNode; subtitle: string; centered?: boolean }> = ({ title, subtitle, centered = true }) => {
   const revealRef = useScrollReveal();
   return (
     <div ref={revealRef} className={`${centered ? 'text-center' : 'text-left'} mb-8 md:mb-12 px-2 heading-animate`}>
-      <h4 className="text-blue-800 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4 heading-subtitle">{subtitle}</h4>
-      <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[1] md:leading-[1.1] text-blue-800 heading-gradient-text">
+      <h4 className="text-blue-800 font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] mb-3 md:mb-4 heading-subtitle mx-auto">{subtitle}</h4>
+      <h2 className="text-3xl md:text-5xl lg:text-5xl font-black tracking-tighter leading-[1] md:leading-[1.1] text-blue-800 heading-gradient-text text-center">
         {title}
       </h2>
     </div>
@@ -289,8 +349,8 @@ const FeatureGrid = () => (
     ].map((f, i) => (
       <ScrollRevealSmall key={i} className="flex flex-col items-center text-center p-8 md:p-12 bg-amber-50 rounded-[40px] border border-slate-50 shadow-sm hover:shadow-xl transition-all duration-500 group">
         <div className="mb-6 p-5 bg-amber-50 rounded-[32px] group-hover:scale-110 transition-transform duration-500">{f.icon}</div>
-        <h3 className="text-xl md:text-2xl font-black text-blue-900 tracking-tight mb-4">{f.title}</h3>
-        <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed italic">"{f.desc}"</p>
+        <h3 className="text-xl md:text-2xl font-black text-blue-900 tracking-tight mb-4 text-center">{f.title}</h3>
+        <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed italic text-center">"{f.desc}"</p>
       </ScrollRevealSmall>
     ))}
   </div>
@@ -308,7 +368,7 @@ const CategoryCurations = ({ onNavigate }: any) => {
       <div className="max-w-7xl mx-auto px-6">
         <ScrollReveal className="mb-12 md:mb-20 text-center">
           <Badge color="bg-red-700">Curated Archives</Badge>
-          <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 bg-gradient-to-br from-slate-950 via-slate-800 to-red-700 bg-clip-text text-transparent heading-gradient-text">
+          <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 bg-gradient-to-br from-slate-950 via-slate-800 to-red-700 bg-clip-text text-transparent heading-gradient-text">
             Shop by <span className="italic">Medium.</span>
           </h2>
         </ScrollReveal>
@@ -320,9 +380,9 @@ const CategoryCurations = ({ onNavigate }: any) => {
               className="relative aspect-[4/5] rounded-[48px] overflow-hidden group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-700"
             >
               <img src={cat.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] ease-out" alt="" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-10 md:p-14">
-                <span className="text-white/60 text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] mb-3">{cat.count}</span>
-                <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-6">{cat.name}</h3>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end items-center p-10 md:p-14 text-center">
+                <span className="text-white/60 text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] mb-3 text-center">{cat.count}</span>
+                <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-6 text-center">{cat.name}</h3>
                 <div className="flex items-center gap-3 text-white font-black text-[10px] md:text-[11px] uppercase tracking-widest bg-amber-50/10 backdrop-blur-md w-fit px-6 py-3 rounded-full border border-white/20 group-hover:bg-amber-50 group-hover:text-blue-900 transition-all duration-500">
                   Explore <ChevronRight size={14} />
                 </div>
@@ -382,27 +442,27 @@ const HeroSlider: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
         <motion.div
           key={img}
           className={`absolute inset-0 transition-all duration-[2000ms] ease-in-out transform ${
-            idx === currentIndex ? 'opacity-50 scale-105' : 'opacity-0 scale-100'
+            idx === currentIndex ? 'opacity-60 scale-105' : 'opacity-0 scale-100'
           }`}
         >
-          <img src={img} className="w-full h-full object-cover" alt="" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+          <img src={img} className="w-full h-full object-cover blur-[4px]" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/20"></div>
         </motion.div>
       ))}
 
       <motion.div 
         style={{ y: textY }}
-        className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-start"
+        className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-start text-left"
       >
-        <div className="max-w-3xl animate-fadeIn">
+        <div className="max-w-3xl animate-fadeIn flex flex-col items-start">
           <Badge color="bg-blue-600">Premium Curations 2026</Badge>
-          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 md:mt-8 mb-8 md:mb-10 text-blue-900 drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]" style={{ fontFamily: '"Comic Sans MS", cursive, sans-serif', fontWeight: 950 }}>
-            <span className="block">Elevate Your <br /><span className="italic text-blue-800">Lifestyle.</span></span>
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 md:mt-8 mb-8 md:mb-10 text-blue-500 drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]" style={{ fontFamily: '"Comic Sans MS", cursive, sans-serif', fontWeight: 950 }}>
+            <span className="block">Elevate Your <br /><span className="italic text-blue-400">Lifestyle.</span></span>
           </h1>
-          <p className="text-white text-base md:text-xl font-medium mb-10 md:mb-12 max-w-lg leading-relaxed">
+          <p className="text-white text-base md:text-xl font-medium mb-10 md:mb-12 max-w-lg leading-relaxed text-left">
             Discover a hand-picked collection of world-class essentials designed for those who settle for nothing but the best.
           </p>
-          <div className="flex gap-4">
+          <div className="flex gap-4 justify-start">
             <button 
               onClick={onExplore}
               className="bg-amber-50 text-blue-900 px-8 md:px-10 py-4 md:py-5 rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all transform active:scale-95 shadow-2xl flex items-center gap-3 group"
@@ -410,7 +470,7 @@ const HeroSlider: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
               Shop Collection <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-          <div className="flex gap-3 mt-10 md:mt-12">
+          <div className="flex gap-3 mt-10 md:mt-12 justify-start">
             {HERO_IMAGES.map((_, idx) => (
               <button
                 key={idx}
@@ -737,6 +797,7 @@ export default function App() {
   if (currentPage === 'admin-dashboard') {
     return (
       <>
+        <ScrollStyles />
         {loading && <SiteLoader />}
         {isProcessing && <CartLoader />}
         <AdminDashboard 
@@ -756,143 +817,144 @@ export default function App() {
 
   return (
     <>
+      <ScrollStyles />
       {loading && <SiteLoader />}
       {isProcessing && <CartLoader />}
       <div className="min-h-screen flex flex-col selection:bg-blue-600 selection:text-white bg-[#fafafa]">
-        <div className="bg-slate-950 text-white py-2 overflow-hidden whitespace-nowrap border-b border-slate-900 no-print">
-          <div className="flex animate-ticker gap-12 md:gap-16 font-black text-[8px] md:text-[9px] uppercase tracking-[0.2em] px-4">
-            <span>Complimentary International Shipping on Orders Over ₹5,000</span>
-            <span>New Limited Drop: The Midnight Collection</span>
-            <span>Elite Member Access Now Open</span>
-            <span>Complimentary International Shipping on Orders Over ₹5,000</span>
+        <div className="bg-slate-900 text-white py-1.5 overflow-hidden whitespace-nowrap border-b border-white/5 no-print relative">
+          <div className="flex animate-ticker gap-12 md:gap-16 font-bold text-[7px] md:text-[8px] uppercase tracking-[0.25em] px-4 opacity-80">
+            <span>Free Express Delivery on All Orders</span>
+            <span>Join ClickPlus for Exclusive Drop Access</span>
+            <span>New Season Collections Now Live</span>
+            <span>Secure Global Payments</span>
+            <span>Free Express Delivery on All Orders</span>
           </div>
         </div>
-        <nav className="sticky top-0 z-50 glass border-b border-amber-200 no-print">
-          <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-            <div className="flex items-center gap-4 md:gap-6">
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNavigate('home')}>
-                <div className="bg-slate-950 p-1 md:p-1.5 rounded-lg"><ShoppingCart className="w-4 h-4 md:w-5 md:h-5 text-white" /></div>
-                <span className="text-lg md:text-xl tracking-tighter text-blue-900 uppercase clickbazaar-brand">Click Bazaar</span>
+        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 no-print transition-all duration-300">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6 h-16 md:h-20 flex items-center justify-between">
+            <div className="flex items-center gap-8 lg:gap-12">
+              <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => handleNavigate('home')}>
+                <div className="bg-blue-600 p-2 rounded-xl group-hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20">
+                  <ShoppingBag className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold tracking-tight text-slate-900 uppercase">Click<span className="text-blue-600">Bazaar</span></span>
+              </div>
+
+              <div className="hidden lg:flex items-center gap-8">
+                <button onClick={() => handleNavigate('home')} className="nav-link">Home</button>
+                <div 
+                  className="relative group py-2"
+                  onMouseEnter={handleCategoryMenuMouseEnter}
+                  onMouseLeave={handleCategoryMenuMouseLeave}
+                >
+                  <button onClick={() => handleNavigate('shop')} className="nav-link flex items-center gap-1.5 font-bold">
+                    Shop <ChevronDown size={14} className="group-hover:rotate-180 transition-transform" />
+                  </button>
+                  <AnimatePresence>
+                    {isCategoryMenuOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full -left-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 p-4"
+                      >
+                        <div className="grid gap-1">
+                          {navCategories.map(cat => (
+                            <button 
+                              key={cat.name} 
+                              onClick={() => handleNavigate('shop', cat.name)}
+                              className="flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-slate-50 text-left transition-all group/item"
+                            >
+                              <span className="text-sm font-bold text-slate-700 group-hover/item:text-blue-600">{cat.name}</span>
+                              <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 group-hover/item:bg-blue-50 group-hover/item:text-blue-400">{cat.count}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button className="nav-link">About</button>
+                <button className="nav-link">Support</button>
               </div>
             </div>
-            <div className="hidden lg:flex flex-1 max-w-md mx-8">
-               <div className="relative w-full group">
+
+            <div className="flex-1 max-w-lg mx-12 hidden xl:block">
+               <div className="relative group">
                  <input 
-                   type="text" placeholder="Search curated catalog..." value={search} onChange={e => setSearch(e.target.value)}
-                   className="w-full bg-slate-100 border-none rounded-full px-6 py-2.5 pr-12 focus:ring-2 focus:ring-blue-800 outline-none font-bold text-blue-900 transition-all text-sm"
+                   type="text" placeholder="Search for products, brands and more..." value={search} onChange={e => setSearch(e.target.value)}
+                   className="w-full bg-slate-100 border-2 border-transparent focus:bg-white focus:border-blue-600/10 rounded-2xl px-6 py-2.5 pr-12 outline-none font-semibold text-slate-900 transition-all text-sm"
                  />
-                 <Search className="absolute right-5 top-2.5 w-4 h-4 text-slate-400" />
+                 <Search className="absolute right-5 top-3 w-4 h-4 text-slate-400 group-focus-within:text-blue-600" />
                </div>
             </div>
-            <div className="flex items-center gap-2 md:gap-4">
-              <div
-                className="relative"
-                ref={categoryMenuRef}
-                onMouseEnter={handleCategoryMenuMouseEnter}
-                onMouseLeave={handleCategoryMenuMouseLeave}
-              >
-                <button
-                  onClick={() => {
-                    if (window.innerWidth < 1024) {
-                      setIsCategoryMenuOpen(prev => !prev);
-                    } else {
-                      setIsCategoryMenuOpen(true);
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border transition-all ${isCategoryMenuOpen ? 'border-slate-300 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-amber-50 hover:bg-amber-50 text-green-700'}`}
-                  aria-label="Open categories"
-                  aria-expanded={isCategoryMenuOpen}
-                >
-                  <span className="hidden md:inline text-[9px] md:text-[10px] font-black uppercase tracking-widest">Categories</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isCategoryMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-[min(88vw,420px)] bg-amber-50 border border-slate-200 rounded-3xl shadow-2xl p-4 md:p-5 z-[80] animate-fadeIn bg-amber-50">
-                    <div className="mb-4 pb-4 border-b border-amber-200">
-                      <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Shop By Category</p>
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-base md:text-lg font-black tracking-tight text-blue-900">Curated Catalog Menu</p>
-                        <button
-                          onClick={() => handleNavigate('shop', 'All')}
-                          className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-colors ${currentPage === 'shop' && selectedCategory === 'All' ? 'bg-slate-950 text-white' : 'bg-slate-100 text-green-700 hover:bg-slate-200'}`}
-                        >
-                          View All
-                        </button>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Featured</p>
-                      <div className="flex flex-wrap gap-2">
-                        {featuredNavCategories.map(category => (
-                          <button
-                            key={`featured-${category.name}`}
-                            onClick={() => handleNavigate('shop', category.name)}
-                            className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-colors ${currentPage === 'shop' && selectedCategory === category.name ? 'bg-slate-950 text-white' : 'bg-slate-100 text-green-700 hover:bg-slate-200'}`}
-                          >
-                            {category.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {navCategories.map(category => (
-                        <button
-                          key={category.name}
-                          onClick={() => handleNavigate('shop', category.name)}
-                          className={`text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-between ${currentPage === 'shop' && selectedCategory === category.name ? 'bg-slate-950 text-white' : 'text-green-700 hover:bg-slate-100'}`}
-                        >
-                          <span>{category.name}</span>
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full ${currentPage === 'shop' && selectedCategory === category.name ? 'bg-amber-50/20 text-white' : 'bg-slate-200 text-green-700'}`}>{category.count}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+
+            <div className="flex items-center gap-3 md:gap-4">
               <button 
-                onClick={() => handleNavigate('tracking')} 
-                className="relative p-2 md:p-2.5 hover:bg-amber-50 rounded-full transition-all text-slate-500 group"
-                title="Live Tracking"
+                onClick={() => handleNavigate('wishlist')}
+                className="p-2.5 hover:bg-slate-100 rounded-full text-slate-600 relative transition-colors"
+                title="Wishlist"
               >
-                <Truck className="w-5 h-5" />
-                {orders.filter(o => o.userId === currentUser?.id).length > 0 && (
-                  <span className="absolute top-1 right-1 bg-blue-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white animate-pulse">
-                    !
+                <Heart className={`w-5 h-5 ${wishlist.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+                {wishlist.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>}
+              </button>
+              
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="p-2.5 hover:bg-slate-100 rounded-full text-slate-600 relative transition-colors"
+                title="Cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce-short">
+                    {cart.reduce((a, b) => a + b.quantity, 0)}
                   </span>
                 )}
               </button>
-              <button onClick={() => handleNavigate('wishlist')} className="relative p-2 md:p-2.5 hover:bg-amber-50 rounded-full transition-all text-slate-500">
-                <Heart className="w-5 h-5" />
-                {wishlist.length > 0 && <span className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">{wishlist.length}</span>}
-              </button>
-              <button onClick={() => handleNavigate('cart')} className="relative p-2 md:p-2.5 hover:bg-amber-50 rounded-full transition-all text-slate-500">
-                <ShoppingCart className="w-5 h-5" />
-                {cart.length > 0 && <span className="absolute top-1 right-1 bg-blue-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">{cart.length}</span>}
-              </button>
-              <div className="h-6 w-px bg-slate-200 mx-1 md:mx-2"></div>
+
+              <div className="h-6 w-px bg-slate-200 hidden md:block"></div>
+
               {currentUser ? (
-                <div className="relative group">
-                  <button className="flex items-center gap-2 md:gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-amber-50 transition-all">
-                    <span className="hidden lg:block text-[11px] font-black uppercase tracking-widest text-green-700">{currentUser.name.split(' ')[0]}</span>
-                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-950 flex items-center justify-center text-white text-[10px] md:text-xs font-black uppercase">{currentUser.name[0]}</div>
+                <div className="relative group py-2">
+                  <button className="flex items-center gap-2 p-1.5 hover:bg-slate-100 rounded-2xl transition-all">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md">
+                      <UserIcon size={16} />
+                    </div>
+                    <div className="hidden md:block text-left pr-2">
+                       <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Welcome back,</p>
+                       <p className="text-xs font-black text-slate-800 leading-none">{currentUser.name.split(' ')[0]}</p>
+                    </div>
                   </button>
-                  <div className="group-hover-visible absolute right-0 top-full mt-2 w-48 bg-amber-50 rounded-2xl shadow-2xl border border-amber-200 p-2 z-[70]">
-                    {currentUser.role === UserRole.Admin ? (
-                      <button onClick={() => setCurrentPage('admin-dashboard')} className="w-full text-left px-4 py-2 hover:bg-amber-50 rounded-lg text-xs font-bold flex items-center gap-3"><LayoutDashboard className="w-4 h-4" /> Control Panel</button>
-                    ) : (
-                      <>
-                        <button onClick={() => handleNavigate('profile')} className="w-full text-left px-4 py-2 hover:bg-amber-50 rounded-lg text-xs font-bold flex items-center gap-3"><UserIcon className="w-4 h-4" /> Profile</button>
-                        <button onClick={() => handleNavigate('orders')} className="w-full text-left px-4 py-2 hover:bg-amber-50 rounded-lg text-xs font-bold flex items-center gap-3"><Package className="w-4 h-4" /> My Orders</button>
-                      </>
+                  <div className="absolute top-full right-0 w-56 bg-white rounded-3xl shadow-2xl border border-slate-100 py-3 opacity-0 translate-y-2 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-300">
+                    <div className="px-4 py-2 border-b border-slate-50 mb-2">
+                       <p className="text-xs font-bold text-slate-900">{currentUser.name}</p>
+                       <p className="text-[10px] text-slate-400">{currentUser.email}</p>
+                    </div>
+                    {[
+                      { icon: <UserIcon className="w-4 h-4" />, label: "Profile", action: () => handleNavigate('profile') },
+                      { icon: <Package className="w-4 h-4" />, label: "My Orders", action: () => handleNavigate('profile') },
+                      { icon: <Heart className="w-4 h-4" />, label: "Wishlist", action: () => handleNavigate('wishlist') },
+                      { icon: <Settings className="w-4 h-4" />, label: "Settings", action: () => {} }
+                    ].map((item, i) => (
+                      <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 text-xs font-bold transition-all">
+                        {item.icon} {item.label}
+                      </button>
+                    ))}
+                    {currentUser.role === UserRole.Admin && (
+                      <button onClick={() => setCurrentPage('admin-dashboard')} className="w-full flex items-center gap-3 px-4 py-2.5 text-blue-600 hover:bg-blue-50 text-xs font-bold transition-all">
+                        <LayoutDashboard className="w-4 h-4" /> Control Panel
+                      </button>
                     )}
-                    <div className="h-px bg-slate-100 my-1 mx-2"></div>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-amber-50 rounded-lg text-xs font-bold flex items-center gap-3 text-red-600"><LogOut className="w-4 h-4" /> Logout</button>
+                    <div className="h-px bg-slate-50 my-2 mx-4"></div>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 text-xs font-bold transition-all">
+                      <LogOut className="w-4 h-4" /> Logout
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-1 md:gap-2">
-                  <button onClick={() => setCurrentPage('login')} className="bg-slate-100 text-blue-900 px-3 md:px-6 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">In</button>
-                  <button onClick={() => setCurrentPage('signup')} className="bg-slate-950 text-white px-3 md:px-6 py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">Up</button>
+                <div className="flex gap-2">
+                  <button onClick={() => setCurrentPage('login')} className="px-5 py-2.5 text-[11px] font-bold text-slate-700 hover:text-blue-600 transition-colors uppercase tracking-widest">Login</button>
+                  <button onClick={() => setCurrentPage('signup')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95">Sign Up</button>
                 </div>
               )}
             </div>
@@ -900,23 +962,23 @@ export default function App() {
         </nav>
         <main className="flex-1">
           {currentPage === 'home' && (
-            <div className="animate-fadeIn bg-amber-50">
+            <div className="animate-fadeIn bg-white">
               <HeroSlider onExplore={() => handleNavigate('shop')} />
               <FeatureGrid />
               <DataVisGrid />
               {/* Flash Deals Section */}
-              <div className="py-16 md:py-24 bg-amber-50 border-b border-amber-200 overflow-hidden relative">
-                 <div className="absolute top-0 right-0 p-40 bg-red-600/5 rounded-full blur-[100px]"></div>
+              <div className="py-16 md:py-24 bg-white border-b border-slate-100 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-40 bg-blue-600/5 rounded-full blur-[100px]"></div>
                  <div className="max-w-7xl mx-auto px-6 relative z-10">
-                   <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6">
-                     <ScrollReveal>
-                       <Badge color="bg-red-600">Accelerated Savings</Badge>
-                       <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-4 text-blue-800 heading-gradient-text">
-                         Flash <span className="italic">Deals.</span>
+                   <div className="flex flex-col items-center mb-12 md:mb-16 gap-6 text-center">
+                     <ScrollReveal className="flex flex-col items-center">
+                       <Badge color="bg-blue-600">Limited Time Offers</Badge>
+                       <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-4 text-slate-900 text-center">
+                         Flash <span className="italic text-blue-600">Deals.</span>
                        </h2>
                      </ScrollReveal>
-                     <div className="flex gap-4">
-                        <div className="bg-rose-50 text-rose-600 px-6 md:px-8 py-3 md:py-4 rounded-[20px] md:rounded-[24px] border border-rose-100 font-black text-xs md:text-sm uppercase tracking-widest flex items-center gap-3 shadow-sm">
+                     <div className="flex gap-4 justify-center">
+                        <div className="bg-blue-50 text-blue-600 px-6 md:px-8 py-3 md:py-4 rounded-3xl border border-blue-100 font-bold text-xs md:text-sm uppercase tracking-widest flex items-center gap-3 shadow-sm">
                           <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" /> 
                           <div className="flex gap-2 md:gap-3 items-center">
                              <div className="flex flex-col items-center"><span>04</span><span className="text-[7px] md:text-[8px] opacity-60">Hrs</span></div>
@@ -929,21 +991,21 @@ export default function App() {
                      </div>
                    </div>
                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
-                      {products.filter(p => p.isLimitedOffer).slice(0, 4).map(p => (
+                      {products.filter(p => p.isLimitedOffer).slice(0, 8).map(p => (
                         <ProductCard key={p.id} product={p} onAdd={() => addToCart(p.id)} onQuick={() => setQuickView(p)} isWish={wishlist.includes(p.id)} onWish={() => {}} />
                       ))}
                    </div>
                  </div>
               </div>
               {/* Best Sellers */}
-              <div ref={bestSellersRef} className="py-16 md:py-24 max-w-7xl mx-auto px-6">
-                <ScrollReveal className="mb-8 md:mb-12 px-2">
-                  <span className="inline-block bg-[#ef4444] text-white font-black uppercase text-[10px] md:text-[11px] tracking-[0.3em] px-5 py-2.5 rounded-[100px] mb-6 md:mb-8 shadow-[0_4px_20px_rgba(239,68,68,0.3)]">Most Coveted</span>
-                  <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] text-blue-800 heading-gradient-text">
-                    <span className="block">Archival <br /><span className="italic">Favorites.</span></span>
+              <div ref={bestSellersRef} className="py-16 md:py-24 max-w-7xl mx-auto px-6 text-center bg-white">
+                <ScrollReveal className="mb-8 md:mb-12 px-2 flex flex-col items-center">
+                  <span className="inline-block bg-blue-600 text-white font-bold uppercase text-[10px] md:text-[11px] tracking-[0.2em] px-5 py-2.5 rounded-full mb-6 md:mb-8 shadow-lg shadow-blue-500/20">Check our catalog</span>
+                  <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] text-slate-900 text-center">
+                    <span className="block">Best <br /><span className="italic text-blue-600">Sellers.</span></span>
                   </h2>
                 </ScrollReveal>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 text-left">
                   {products.filter(p => p.isBestSeller).slice(0, 8).map(p => (
                     <ProductCard key={p.id} product={p} onAdd={() => addToCart(p.id)} onQuick={() => setQuickView(p)} isWish={wishlist.includes(p.id)} onWish={() => {}} />
                   ))}
@@ -1023,14 +1085,14 @@ export default function App() {
                  </div>
               </div>
             </div>
-            <div ref={newArrivalsRef} className="bg-amber-50 py-16 md:py-24 border-y border-amber-200">
+            <div ref={newArrivalsRef} className="bg-white py-16 md:py-24 border-y border-slate-100">
                  <div className="max-w-7xl mx-auto px-6">
-                   <ScrollReveal className="mb-8 md:mb-12 px-2 text-center md:text-left">
-                     <div className="inline-flex items-center px-4 py-1.5 bg-blue-600 rounded-full mb-4 group hover:bg-red-700 transition-colors duration-300 shadow-sm">
-                        <h4 className="text-white font-black uppercase text-[9px] md:text-[10px] tracking-[0.3em] heading-subtitle leading-none">The Latest Archival Drops</h4>
+                   <ScrollReveal className="mb-8 md:mb-12 px-2 text-center flex flex-col items-center">
+                     <div className="inline-flex items-center px-4 py-1.5 bg-blue-600 rounded-full mb-4 group hover:bg-blue-700 transition-colors duration-300 shadow-lg shadow-blue-500/20">
+                        <h4 className="text-white font-bold uppercase text-[9px] md:text-[10px] tracking-[0.3em] leading-none text-center">New Drop</h4>
                      </div>
-                     <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] text-blue-800 heading-gradient-text">
-                       <span className="block">New <br /><span className="italic">Arrivals.</span></span>
+                     <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] text-slate-900 text-center">
+                       <span className="block">Fresh <br /><span className="italic text-blue-600">Arrivals.</span></span>
                      </h2>
                    </ScrollReveal>
                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
@@ -2030,7 +2092,11 @@ const ProductCard: React.FC<{product: Product; onAdd: () => void; onQuick: () =>
       className="premium-card group bg-amber-50 rounded-[32px] md:rounded-[48px] overflow-hidden flex flex-col border border-slate-50 shadow-sm relative transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] h-full"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-amber-50">
-        <img src={product.image} className="w-full h-full object-cover transition-transform duration-[1s] ease-out" alt={product.name} />
+        <img 
+          src={product.image} 
+          className={`w-full h-full transition-transform duration-[1s] ease-out ${product.name === 'Fold X-Legacy' ? 'object-contain scale-[0.85]' : 'object-cover'}`} 
+          alt={product.name} 
+        />
         <div className="absolute inset-0 bg-slate-950/40 opacity-0 lg:group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-4 md:gap-5 backdrop-blur-[2px]">
           <button onClick={onQuick} className="bg-amber-50 p-4 md:p-5 rounded-[20px] md:rounded-[24px] text-blue-900 shadow-xl transition-all duration-300 hover:bg-blue-600 hover:text-white"><Eye className="w-5 h-5 md:w-6 md:h-6" /></button>
           <button onClick={onAdd} className="bg-amber-50 p-4 md:p-5 rounded-[20px] md:rounded-[24px] text-blue-900 shadow-xl transition-all duration-300 hover:bg-blue-600 hover:text-white"><Plus className="w-5 h-5 md:w-6 md:h-6" /></button>

@@ -18,7 +18,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 3499,
     description: 'Fine-knit merino wool for climate-controlled layering.',
     image: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80',
-    stock: 20, rating: 4.7, isBestSeller: false, isNewArrival: true, discount: 5
+    stock: 20, rating: 4.7, isBestSeller: false, isNewArrival: true, isLimitedOffer: true, discount: 5
   },
   {
     id: 'P1-3',
@@ -74,7 +74,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 85999,
     description: 'Mirrorless tech with vintage color science processing.',
     image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
-    stock: 8, rating: 5.0, isBestSeller: false, isNewArrival: true, discount: 5
+    stock: 8, rating: 5.0, isBestSeller: false, isNewArrival: true, isLimitedOffer: true, discount: 5
   },
   {
     id: 'P2-4',
@@ -121,7 +121,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 4299,
     description: 'Brutalist aesthetic with adjustable warm-dim LED technology.',
     image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80',
-    stock: 12, rating: 4.7, isBestSeller: false, isNewArrival: true, discount: 10
+    stock: 12, rating: 4.7, isBestSeller: false, isNewArrival: true, isLimitedOffer: true, discount: 10
   },
   {
     id: 'P3-4',
@@ -138,7 +138,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: Category.Home,
     price: 1299,
     description: 'Signature archival scents: Cedar, Smoke, and Moss.',
-    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&w=800&q=80',
+    image: 'https://houseofaroma.in/wp-content/uploads/2023/02/aroma-diffuser-set-combo-pack3.webp',
     stock: 60, rating: 4.8, isBestSeller: true, isNewArrival: false, discount: 0
   },
 
@@ -167,7 +167,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: Category.Mobile,
     price: 89999,
     description: 'Durable hinge tech with seamless archival transition.',
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
+    image: 'https://robbreport.com/wp-content/uploads/2026/01/samsung-galaxy-z-trifold.jpg?w=480',
     stock: 10, rating: 4.8, isBestSeller: true, isNewArrival: true, discount: 10
   },
   {
@@ -317,7 +317,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: Category.Beauty,
     price: 4599,
     description: 'Brightening regimen for skin revitalization.',
-    image: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=800&q=80',
+    image: 'https://dermatouch.com/cdn/shop/files/Bright-_-Glow-Kit.png?v=1766644039',
     stock: 25, rating: 4.8, isBestSeller: true, isNewArrival: true, discount: 15
   },
   {
