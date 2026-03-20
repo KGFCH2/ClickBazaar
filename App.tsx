@@ -69,6 +69,7 @@ import {
   Info,
   Scale,
   Lock,
+  Key,
   Mail,
   Percent,
   MessageSquare,
@@ -87,6 +88,7 @@ import {
 } from './types';
 import { INITIAL_PRODUCTS, INITIAL_USERS } from './constants';
 import { getProductDescription } from './services/geminiService';
+import * as api from './services/api';
 import Lenis from 'lenis';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence, useReducedMotion } from 'framer-motion';
 
@@ -415,7 +417,7 @@ const HeroSlider: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
   }, []);
 
   return (
-    <div className="relative h-[75vh] md:h-[85vh] w-full overflow-hidden bg-slate-950">
+    <div className="relative h-[65vh] md:h-[85vh] w-full overflow-hidden bg-slate-950">
       {/* 3D Floating Elements Background */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
@@ -455,14 +457,14 @@ const HeroSlider: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
         className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-start text-left"
       >
         <div className="max-w-3xl animate-fadeIn flex flex-col items-start">
-          <Badge color="bg-blue-600">Premium Curations 2026</Badge>
+          <Badge color="bg-red-600">Premium Curations 2026</Badge>
           <h1 className="text-4xl md:text-7xl font-black tracking-tighter leading-[1] md:leading-[0.9] mt-6 md:mt-8 mb-8 md:mb-10 text-blue-500 drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)]" style={{ fontFamily: '"Comic Sans MS", cursive, sans-serif', fontWeight: 950 }}>
             <span className="block">Elevate Your <br /><span className="italic text-blue-400">Lifestyle.</span></span>
           </h1>
           <p className="text-white text-base md:text-xl font-medium mb-10 md:mb-12 max-w-lg leading-relaxed text-left">
             Discover a hand-picked collection of world-class essentials designed for those who settle for nothing but the best.
           </p>
-          <div className="flex gap-4 justify-start">
+          <div className="flex flex-col md:flex-row gap-4 justify-start">
             <button 
               onClick={onExplore}
               className="bg-amber-50 text-blue-900 px-8 md:px-10 py-4 md:py-5 rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all transform active:scale-95 shadow-2xl flex items-center gap-3 group"
@@ -531,6 +533,7 @@ export default function App() {
   const [quickView, setQuickView] = useState<Product | null>(null);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isAdminMobileOpen, setIsAdminMobileOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [showScrollArrow, setShowScrollArrow] = useState<'up' | 'down' | null>('down');
   const reviewsScrollRef = useRef<HTMLDivElement>(null);
@@ -598,6 +601,50 @@ export default function App() {
     localStorage.setItem('cb_state_final_v1', JSON.stringify({ users, orders, loginSessions, wishlist }));
   }, [users, orders, loginSessions, wishlist]);
 
+  // Restore session from backend if cookie exists
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.getMe();
+        if (res?.user) {
+          const user = res.user;
+          setCurrentUser({
+            id: user.id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role === 'admin' ? UserRole.Admin : UserRole.Customer,
+            createdAt: new Date().toISOString(),
+          });
+          setCurrentPage(user.role === 'admin' ? 'admin-dashboard' : 'home');
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const ordersRes = await api.fetchOrders();
+        if (ordersRes?.orders) {
+          setOrders(ordersRes.orders.map((o: any) => ({
+            id: o.id.toString(),
+            userId: o.user_id.toString(),
+            items: JSON.parse(o.items).map((item: any) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              priceAtPurchase: item.priceAtPurchase,
+              name: item.name
+            })),
+            total: o.total,
+            status: OrderStatus.Placed,
+            shippingAddress: JSON.parse(o.shipping_address),
+            createdAt: new Date(o.created_at).toISOString(),
+          })));
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (!categoryMenuRef.current) return;
@@ -614,11 +661,18 @@ export default function App() {
       if (event.key === 'Escape') {
         setIsCategoryMenuOpen(false);
         setQuickView(null);
+        setIsMobileNavOpen(false);
       }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
+
+  useEffect(() => {
+    // Prevent background scroll when mobile nav is open.
+    document.body.style.overflow = isMobileNavOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobileNavOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -646,6 +700,7 @@ export default function App() {
 
   const handleNavigate = useCallback((p: string, category: Category | 'All' = 'All') => {
     setIsCategoryMenuOpen(false);
+    setIsMobileNavOpen(false);
     setSelectedCategory(category);
     setCurrentPage(p);
     scrollToTop();
@@ -656,46 +711,67 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSignup = (name: string, email: string, pass: string) => {
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-      showToast("Identity already exists in archive.");
+  const handleSignup = async (name: string, email: string, pass: string, adminKey?: string) => {
+    // Prevent regular users from accidentally signing up with the admin email
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@clickbazaar.com').toLowerCase();
+    if (email.toLowerCase() === adminEmail && !adminKey) {
+      showToast('Admin registration must be completed via the admin portal.');
+      setCurrentPage('admin-signup');
       return;
     }
-    const newUser: User = {
-      id: `USR-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      name,
-      email: email.toLowerCase(),
-      role: email.includes('admin@clickbazaar') ? UserRole.Admin : UserRole.Customer,
-      createdAt: new Date().toISOString()
-    };
-    setUsers(prev => [...prev, newUser]);
-    showToast("Registration successful. Proceed to Login.");
-    setCurrentPage('login');
-  };
 
-  const handleLogin = (email: string, pass: string) => {
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      setCurrentUser(user);
+    try {
+      const { user } = await api.register(name, email, pass, adminKey);
+      setCurrentUser({
+        id: user.id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role === 'admin' ? UserRole.Admin : UserRole.Customer,
+        createdAt: new Date().toISOString()
+      });
+      showToast(`Registered as ${user.name}`);
+      setCurrentPage(user.role === 'admin' ? 'admin-dashboard' : 'home');
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+  const handleLogin = async (email: string, pass: string, adminKey?: string) => {
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@clickbazaar.com').toLowerCase();
+    if (email.toLowerCase() === adminEmail && !adminKey) {
+      // Ensure admins use the dedicated admin portal and supply the admin access key
+      showToast('Admin access requires the admin portal key. Redirecting...');
+      setCurrentPage('admin-login');
+      return;
+    }
+
+    try {
+      const { user } = await api.login(email, pass, adminKey);
+      const mappedUser: User = {
+        id: user.id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role === 'admin' ? UserRole.Admin : UserRole.Customer,
+        createdAt: new Date().toISOString()
+      };
+      setCurrentUser(mappedUser);
       const session: LoginSession = {
         id: `SES-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
+        userId: mappedUser.id,
+        userName: mappedUser.name,
+        userEmail: mappedUser.email,
         timestamp: new Date().toISOString()
       };
       setLoginSessions(prev => [session, ...prev]);
-      showToast(`Authenticated as ${user.name}`);
-      if (user.role === UserRole.Admin) {
+      showToast(`Authenticated as ${mappedUser.name}`);
+      if (mappedUser.role === UserRole.Admin) {
         setCurrentPage('admin-dashboard');
       } else {
         setCurrentPage('home');
       }
-    } else {
-      showToast("Invalid credentials.");
+    } catch (err: any) {
+      showToast(err.message);
     }
   };
-
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentPage('home');
@@ -725,34 +801,46 @@ export default function App() {
     });
   };
 
-  const completeOrder = (shipping: any) => {
+  const completeOrder = async (shipping: any) => {
     if (!currentUser) {
-      showToast("Please login to complete purchase.");
+      showToast('Please login to complete purchase.');
       setCurrentPage('login');
       return;
     }
+
     setIsProcessing(true);
-    setTimeout(() => {
+    try {
       const items = cart.map(c => {
         const p = products.find(prod => prod.id === c.productId)!;
         return { ...c, priceAtPurchase: p.price, name: p.name };
       });
       const total = items.reduce((a, b) => a + (b.priceAtPurchase * b.quantity), 0);
-      const order: Order = {
-        id: `CB-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+
+      const { order } = await api.createOrder({
+        items,
+        total,
+        shippingAddress: shipping,
+      });
+
+      const formattedOrder: Order = {
+        id: order.id.toString(),
         userId: currentUser.id,
         items,
         total,
-        status: OrderStatus.Placed,
+        status: order.status as OrderStatus,
         shippingAddress: shipping,
-        createdAt: new Date().toISOString()
+        createdAt: new Date(order.created_at).toISOString(),
       };
-      setOrders(prev => [order, ...prev]);
-      setLastOrder(order);
+
+      setOrders(prev => [formattedOrder, ...prev]);
+      setLastOrder(formattedOrder);
       setCart([]);
-      setIsProcessing(false);
       setCurrentPage('order-success');
-    }, 2000);
+    } catch (error: any) {
+      showToast(error.message || 'Failed to complete order');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const navCategories = useMemo<Array<{ name: Category; count: number }>>(() => {
@@ -793,6 +881,42 @@ export default function App() {
       setIsCategoryMenuOpen(false);
     }
   };
+
+  if (currentPage === 'admin-login') {
+    return (
+      <>
+        <ScrollStyles />
+        {loading && <SiteLoader />}
+        <AuthView
+          mode="login"
+          admin
+          onAuth={handleLogin}
+          onToggle={() => setCurrentPage('admin-signup')}
+          onSwitch={() => setCurrentPage('login')}
+          switchLabel="Back to user portal"
+          onBack={() => setCurrentPage('home')}
+        />
+      </>
+    );
+  }
+
+  if (currentPage === 'admin-signup') {
+    return (
+      <>
+        <ScrollStyles />
+        {loading && <SiteLoader />}
+        <AuthView
+          mode="signup"
+          admin
+          onAuth={handleSignup}
+          onToggle={() => setCurrentPage('admin-login')}
+          onSwitch={() => setCurrentPage('login')}
+          switchLabel="Back to user portal"
+          onBack={() => setCurrentPage('home')}
+        />
+      </>
+    );
+  }
 
   if (currentPage === 'admin-dashboard') {
     return (
@@ -840,6 +964,16 @@ export default function App() {
                 <span className="text-xl font-bold tracking-tight text-slate-900 uppercase">Click<span className="text-blue-600">Bazaar</span></span>
               </div>
 
+              {currentPage !== 'home' && (
+                <button
+                  onClick={() => handleNavigate('home')}
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-bold text-slate-700 uppercase tracking-widest transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+              )}
+
               <div className="hidden lg:flex items-center gap-8">
                 <button onClick={() => handleNavigate('home')} className="nav-link">Home</button>
                 <div 
@@ -876,6 +1010,18 @@ export default function App() {
                 </div>
                 <button className="nav-link">About</button>
                 <button className="nav-link">Support</button>
+                <button
+                  onClick={() => {
+                    if (currentUser?.role === UserRole.Admin) {
+                      handleNavigate('admin-dashboard');
+                    } else {
+                      handleNavigate('admin-login');
+                    }
+                  }}
+                  className="nav-link font-bold text-red-600"
+                >
+                  Admin Portal
+                </button>
               </div>
             </div>
 
@@ -890,17 +1036,21 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4">
-              <button 
-                onClick={() => handleNavigate('wishlist')}
-                className="p-2.5 hover:bg-slate-100 rounded-full text-slate-600 relative transition-colors"
-                title="Wishlist"
+              <button
+                onClick={() => { setIsMobileNavOpen(v => !v); setIsCategoryMenuOpen(false); }}
+                className="lg:hidden p-2 rounded-full bg-slate-100/80 hover:bg-slate-200 transition-colors"
+                aria-label={isMobileNavOpen ? 'Close menu' : 'Open menu'}
               >
+                {isMobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+
+              <button onClick={() => handleNavigate('wishlist')} title="Wishlist" className="relative">
                 <Heart className={`w-5 h-5 ${wishlist.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
                 {wishlist.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>}
               </button>
-              
-              <button 
-                onClick={() => setIsCartOpen(true)}
+
+              <button
+                onClick={() => handleNavigate('cart')}
                 className="p-2.5 hover:bg-slate-100 rounded-full text-slate-600 relative transition-colors"
                 title="Cart"
               >
@@ -940,11 +1090,6 @@ export default function App() {
                         {item.icon} {item.label}
                       </button>
                     ))}
-                    {currentUser.role === UserRole.Admin && (
-                      <button onClick={() => setCurrentPage('admin-dashboard')} className="w-full flex items-center gap-3 px-4 py-2.5 text-blue-600 hover:bg-blue-50 text-xs font-bold transition-all">
-                        <LayoutDashboard className="w-4 h-4" /> Control Panel
-                      </button>
-                    )}
                     <div className="h-px bg-slate-50 my-2 mx-4"></div>
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 text-xs font-bold transition-all">
                       <LogOut className="w-4 h-4" /> Logout
@@ -960,6 +1105,85 @@ export default function App() {
             </div>
           </div>
         </nav>
+        <AnimatePresence>
+          {isMobileNavOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-white/95 backdrop-blur-md"
+            >
+              <div className="max-w-md mx-auto h-full flex flex-col p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                      <ShoppingBag className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-lg font-bold tracking-tight text-slate-900 uppercase">Click<span className="text-blue-600">Bazaar</span></span>
+                  </div>
+                  <button onClick={() => setIsMobileNavOpen(false)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors" aria-label="Close menu">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="mt-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+                    />
+                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+
+                <div className="mt-8 space-y-3 text-sm font-bold">
+                  <button onClick={() => handleNavigate('home')} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-100 transition-colors">Home</button>
+                  <button onClick={() => handleNavigate('shop')} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-100 transition-colors">Shop</button>
+                  <button onClick={() => handleNavigate('home')} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-100 transition-colors">About</button>
+                  <button onClick={() => handleNavigate('home')} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-100 transition-colors">Support</button>
+                  <button
+                    onClick={() => {
+                      if (currentUser?.role === UserRole.Admin) {
+                        handleNavigate('admin-dashboard');
+                      } else {
+                        handleNavigate('admin-login');
+                      }
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-2xl hover:bg-slate-100 transition-colors text-red-600 font-black"
+                  >
+                    Admin Portal
+                  </button>
+                </div>
+
+                <div className="mt-auto space-y-3">
+                  <div className="flex items-center justify-between px-4 py-3 bg-slate-100 rounded-2xl">
+                    <button className="flex items-center gap-2 text-slate-800" onClick={() => { setIsMobileNavOpen(false); handleNavigate('wishlist'); }}>
+                      <Heart className="w-5 h-5 text-red-500" /> Wishlist
+                    </button>
+                    <button className="flex items-center gap-2 text-slate-800" onClick={() => { setIsMobileNavOpen(false); handleNavigate('cart'); }}>
+                      <ShoppingCart className="w-5 h-5" /> {cart.reduce((a, b) => a + b.quantity, 0)}
+                    </button>
+                  </div>
+                  {currentUser ? (
+                    <div className="p-4 bg-slate-50 rounded-2xl">
+                      <p className="text-sm font-bold text-slate-900">{currentUser.name}</p>
+                      <p className="text-xs text-slate-500">{currentUser.email}</p>
+                      <button onClick={handleLogout} className="mt-3 w-full px-4 py-3 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest">Logout</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3">
+                      <button onClick={() => { setIsMobileNavOpen(false); setCurrentPage('login'); }} className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-slate-700">Login</button>
+                      <button onClick={() => { setIsMobileNavOpen(false); setCurrentPage('signup'); }} className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-2xl font-bold">Sign Up</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <main className="flex-1">
           {currentPage === 'home' && (
             <div className="animate-fadeIn bg-white">
@@ -1160,8 +1384,8 @@ export default function App() {
               </div>
             </div>
           )}
-          {currentPage === 'login' && <AuthView mode="login" onAuth={handleLogin} onToggle={() => setCurrentPage('signup')} />}
-          {currentPage === 'signup' && <AuthView mode="signup" onAuth={handleSignup} onToggle={() => setCurrentPage('login')} />}
+          {currentPage === 'login' && <AuthView mode="login" onAuth={handleLogin} onToggle={() => setCurrentPage('signup')} onSwitch={() => setCurrentPage('admin-login')} switchLabel="Admin access" onBack={() => setCurrentPage('home')} />}
+          {currentPage === 'signup' && <AuthView mode="signup" onAuth={handleSignup} onToggle={() => setCurrentPage('login')} onSwitch={() => setCurrentPage('admin-login')} switchLabel="Admin access" onBack={() => setCurrentPage('home')} />}
           {currentPage === 'cart' && <CartPage cart={cart} products={products} onRemove={removeFromCart} onAdd={addToCart} onCheckout={() => setCurrentPage('checkout')} onNavigate={handleNavigate} />}
           {currentPage === 'checkout' && <CheckoutPage cart={cart} products={products} onComplete={completeOrder} onBack={() => setCurrentPage('cart')} onAdd={addToCart} onRemove={removeFromCart} />}
           {currentPage === 'order-success' && <OrderSuccessPage order={lastOrder} onNavigate={handleNavigate} />}
@@ -1457,7 +1681,7 @@ const PrivacyPage = ({ onNavigate }: any) => (
         <div className="bg-amber-50 p-8 md:p-16 rounded-[40px] md:rounded-[60px] shadow-sm border border-amber-200 text-green-700 font-medium leading-loose text-sm md:text-base">
             <Lock className="w-12 h-12 md:w-16 md:h-16 text-blue-800 mb-8 md:mb-10" />
             <h3 className="text-xl md:text-2xl font-black text-blue-900 mb-6 page-sub-heading-animate">Your Security, Our Priority</h3>
-            <p className="mb-8">At <span className="clickbazaar-brand">Click Bazaar</span>, we employ military-grade encryption to protect your identity and transaction history. Every piece of telemetry collected is used solely to enhance your curated experience and ensure logistical precision.</p>
+            <p className="mb-8">At <span className="clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span>, we employ military-grade encryption to protect your identity and transaction history. Every piece of telemetry collected is used solely to enhance your curated experience and ensure logistical precision.</p>
             <ul className="space-y-4 mb-10">
                 <li className="flex gap-4 items-start"><Check className="w-5 h-5 text-blue-800 shrink-0 mt-1" /> No third-party data brokerage of individual identities.</li>
                 <li className="flex gap-4 items-start"><Check className="w-5 h-5 text-blue-800 shrink-0 mt-1" /> End-to-end encrypted transaction ledger.</li>
@@ -1474,14 +1698,14 @@ const TermsPage = ({ onNavigate }: any) => (
         <div className="bg-amber-50 p-8 md:p-16 rounded-[40px] md:rounded-[60px] border border-slate-200">
             <h3 className="text-lg md:text-xl font-black text-blue-900 mb-8 uppercase tracking-widest page-sub-heading-animate">General protocols</h3>
             <div className="space-y-8 text-slate-500 text-sm leading-relaxed">
-                <p>By accessing the <span className="clickbazaar-brand">Click Bazaar</span> network, you agree to the protocols defined in our archival agreement. Our services are provided to authenticated curators only.</p>
+                <p>By accessing the <span className="clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span> network, you agree to the protocols defined in our archival agreement. Our services are provided to authenticated curators only.</p>
                 <div className="bg-amber-50 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-amber-200">
                     <h4 className="font-black text-blue-900 mb-4 text-[10px] md:text-xs uppercase tracking-widest card-heading-animate">1. Registration</h4>
                     <p>Curators must provide valid legal identity identifiers. Multiple account creation for speculative acquisition is strictly prohibited within the ecosystem.</p>
                 </div>
                 <div className="bg-amber-50 p-6 md:p-8 rounded-2xl md:rounded-3xl border border-amber-200">
                     <h4 className="font-black text-blue-900 mb-4 text-[10px] md:text-xs uppercase tracking-widest card-heading-animate">2. Fulfillment</h4>
-                    <p>All logistical estimations are subject to global freight telemetry. <span className="clickbazaar-brand">Click Bazaar</span> ensures priority handling for all Elite acquisitions.</p>
+                    <p>All logistical estimations are subject to global freight telemetry. <span className="clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span> ensures priority handling for all Elite acquisitions.</p>
                 </div>
             </div>
         </div>
@@ -1501,7 +1725,7 @@ const LegalPage = ({ onNavigate }: any) => (
             <div className="bg-amber-50 p-10 md:p-12 rounded-[40px] md:rounded-[50px] shadow-sm border border-amber-200">
                 <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 text-blue-800 mb-8" />
                 <h3 className="text-xl md:text-2xl font-black text-blue-900 mb-4 tracking-tighter page-sub-heading-animate">Intellectual Property</h3>
-                <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">All curated content, archival descriptions, and telemetry interfaces are proprietary assets of <span className="clickbazaar-brand">Click Bazaar</span> Global Archive.</p>
+                <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">All curated content, archival descriptions, and telemetry interfaces are proprietary assets of <span className="clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span> Global Archive.</p>
                 <Badge color="bg-slate-950">Protected</Badge>
             </div>
         </div>
@@ -1552,7 +1776,7 @@ const LiveTrackingView = ({ orders, onNavigate }: { orders: Order[], onNavigate:
              {[
                { status: 'Arrived at Destination Hub', detail: 'Local sorting facility, Mumbai', time: 'Expected Today', active: false },
                { status: 'Departed Global Sorting Node', detail: 'International Air Hub', time: '08:45 AM', active: true },
-               { status: 'Package Processed', detail: <><span className="clickbazaar-brand">Click Bazaar</span> Fulfillment Center</>, time: 'Yesterday, 04:20 PM', active: false },
+               { status: 'Package Processed', detail: <><span className="clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span> Fulfillment Center</>, time: 'Yesterday, 04:20 PM', active: false },
                { status: 'Order Authenticated', detail: 'System Validation Complete', time: 'Yesterday, 02:15 PM', active: false },
              ].map((step, i) => (
                <div key={i} className="flex gap-6 md:gap-10 relative z-10">
@@ -1609,7 +1833,7 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
       <div className="col-span-1">
         <div className="flex items-center gap-2 mb-8 md:mb-10 cursor-pointer" onClick={() => onNavigate('home')}>
           <div className="bg-blue-600 p-1.5 rounded-lg"><ShoppingCart className="w-6 h-6" /></div>
-          <span className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase clickbazaar-brand">Click Bazaar</span>
+          <span className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase clickbazaar-brand">Click <span className="text-red-500">Bazaar</span></span>
         </div>
         <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-sm mb-10 md:mb-12">Defining digital excellence through curated aesthetics, global archival fulfillment, and advanced archival telemetry.</p>
         <div className="flex gap-4">
@@ -1652,7 +1876,7 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
       </div>
     </div>
     <div className="max-w-7xl mx-auto px-6 mt-20 md:mt-24 pt-10 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-8">
-      <p className="text-[9px] md:text-[10px] font-black text-slate-700 uppercase tracking-widest text-center"><span className="clickbazaar-brand">© 2025 CLICK BAZAAR</span> GLOBAL ARCHIVE. ARCHITECTED FOR ELITE COMMERCE.</p>
+      <p className="text-[9px] md:text-[10px] font-black text-slate-700 uppercase tracking-widest text-center"><span className="clickbazaar-brand">© 2025 CLICK <span className="text-red-500">BAZAAR</span></span> GLOBAL ARCHIVE. ARCHITECTED FOR ELITE COMMERCE.</p>
       <div className="flex items-center gap-6 md:gap-10 text-[8px] md:text-[9px] font-black text-slate-700 uppercase tracking-[0.2em]">
         <span>ISO 9001 COMPLIANT</span>
         <span>AES-256 ENCRYPTED</span>
@@ -1666,9 +1890,21 @@ const Footer = ({ onNavigate }: { onNavigate: (p: string, cat?: Category) => voi
 const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogout, onNavigate, isMobileOpen, setIsMobileOpen }: any) => {
   const [activeTab, setActiveTab] = useState('telemetry');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [adminUsers, setAdminUsers] = useState<User[]>(users);
+  const [adminOrders, setAdminOrders] = useState<Order[]>(orders);
+  const [userFilter, setUserFilter] = useState('');
+  const [orderFilter, setOrderFilter] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'All' | 'Placed' | 'Packed' | 'Shipped' | 'Delivered'>('All');
+  const [loadingAdminData, setLoadingAdminData] = useState(false);
+
+  const handleBackToStorefront = useCallback(() => {
+    setIsMobileOpen(false);
+    onNavigate('home');
+  }, [onNavigate, setIsMobileOpen]);
+
   const userStats = useMemo(() => {
     if (!selectedUser) return null;
-    const userOrders = orders.filter((o: any) => o.userId === selectedUser.id);
+    const userOrders = adminOrders.filter((o: any) => o.userId === selectedUser.id);
     const userSessions = sessions.filter((s: any) => s.userId === selectedUser.id);
     return {
       totalOrders: userOrders.length,
@@ -1678,17 +1914,64 @@ const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogo
       orders: userOrders,
       sessions: userSessions
     };
-  }, [selectedUser, orders, sessions]);
+  }, [selectedUser, adminOrders, sessions]);
+
+  useEffect(() => {
+    (async () => {
+      setLoadingAdminData(true);
+      try {
+        const usersRes = await api.fetchAdminUsers();
+        const ordersRes = await api.fetchAdminOrders();
+        setAdminUsers(usersRes.users);
+        setAdminOrders(ordersRes.orders.map((o: any) => ({
+          ...o,
+          createdAt: new Date(o.created_at).toISOString(),
+        })));
+      } catch (err) {
+        console.error('Failed to load admin data', err);
+      }
+      setLoadingAdminData(false);
+    })();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = userFilter.trim().toLowerCase();
+    return adminUsers.filter(u => {
+      if (!q) return true;
+      return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    });
+  }, [adminUsers, userFilter]);
+
+  const filteredOrders = useMemo(() => {
+    const q = orderFilter.trim().toLowerCase();
+    return adminOrders.filter(o => {
+      const matchText = !q || o.id.toString().includes(q) || (o.user_id && o.user_id.toString().includes(q));
+      const matchStatus = orderStatusFilter === 'All' || o.status === orderStatusFilter;
+      return matchText && matchStatus;
+    });
+  }, [adminOrders, orderFilter, orderStatusFilter]);
+
   return (
     <div className="min-h-screen flex bg-[#f8f9fc] animate-fadeIn bg-amber-50 flex-col md:flex-row">
+      <div className="fixed top-4 left-4 z-[70] hidden sm:block">
+        <button onClick={handleBackToStorefront} className="flex items-center gap-2 px-3 py-2 bg-slate-900/90 text-white rounded-full font-black uppercase tracking-widest hover:bg-slate-900 transition-colors shadow-lg">
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+      </div>
       <div className="md:hidden bg-slate-950 text-white p-4 flex justify-between items-center sticky top-0 z-[60]">
          <div className="flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-blue-800" />
             <span className="font-black uppercase tracking-tighter">ARCHIVE</span>
          </div>
-         <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="p-2 bg-slate-900 rounded-lg">
-           {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-         </button>
+         <div className="flex items-center gap-2">
+            <button onClick={handleBackToStorefront} className="flex items-center gap-1 px-3 py-2 bg-slate-900/80 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </button>
+            <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="p-2 bg-slate-900 rounded-lg">
+              {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+         </div>
       </div>
       <aside className={`w-72 bg-slate-950 text-white flex-col sticky top-0 h-screen shadow-2xl z-50 md:flex ${isMobileOpen ? 'fixed inset-0 w-full flex' : 'hidden md:flex'}`}>
         <div className="p-10 mb-8 hidden md:block">
@@ -1714,15 +1997,21 @@ const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogo
            ))}
         </nav>
         <div className="p-8 border-t border-slate-900 space-y-4">
-           <button onClick={() => onNavigate('home')} className="w-full text-left px-6 py-3 font-black text-[10px] uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-4"><ExternalLink className="w-4 h-4" /> Storefront</button>
+           <button onClick={handleBackToStorefront} className="w-full text-left px-6 py-3 font-black text-[10px] uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-4"><ExternalLink className="w-4 h-4" /> Storefront</button>
            <button onClick={onLogout} className="w-full text-left px-6 py-3 font-black text-[10px] uppercase tracking-widest text-red-600 hover:bg-red-600/10 rounded-xl flex items-center gap-4"><LogOut className="w-4 h-4" /> Terminate</button>
         </div>
       </aside>
       <main className="flex-1 p-6 md:p-12 overflow-y-auto relative custom-scrollbar">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 md:mb-16 gap-6">
-          <div>
-            <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] capitalize text-blue-800 heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">{activeTab}<br /><span className="italic">Interface.</span></span></h1>
-            <p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-2">Real-time system diagnostics</p>
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <button onClick={handleBackToStorefront} className="flex items-center gap-2 px-4 py-3 bg-slate-900/90 text-white rounded-full font-black uppercase tracking-widest hover:bg-slate-900 transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div>
+              <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] md:leading-[0.9] capitalize text-blue-800 heading-gradient-text" style={{backgroundSize: '200% 200%', animation: 'headingGradientShift 6s ease-in-out infinite'}}><span className="block">{activeTab}<br /><span className="italic">Interface.</span></span></h1>
+              <p className="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-2">Real-time system diagnostics</p>
+            </div>
           </div>
           <div className="flex gap-4">
              <div className="bg-amber-50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-amber-200 flex items-center gap-3 md:gap-4 shadow-sm">
@@ -1733,7 +2022,7 @@ const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogo
         </div>
         <div className="overflow-x-auto bg-amber-50 rounded-[32px] md:rounded-[48px] border border-slate-50 shadow-sm">
           {activeTab === 'telemetry' && (
-            <table className="w-full text-left min-w-[600px]">
+            <table className="w-full text-left min-w-full md:min-w-[600px]">
               <thead>
                 <tr className="border-b border-slate-50">
                   <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">User Identity</th>
@@ -1763,60 +2052,143 @@ const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogo
             </table>
           )}
           {activeTab === 'identities' && (
-            <table className="w-full text-left min-w-[600px]">
-              <thead>
-                <tr className="border-b border-slate-50">
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Registrant</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Role</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {users.map((u: User) => (
-                  <tr key={u.id} className="hover:bg-amber-50 transition-colors group">
-                    <td className="px-6 md:px-10 py-4 md:py-6">
-                      <p className="font-black text-blue-900 text-xs md:text-sm">{u.name}</p>
-                      <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">{u.email}</p>
-                    </td>
-                    <td className="px-6 md:px-10 py-4 md:py-6"><Badge color={u.role === UserRole.Admin ? "bg-slate-950" : "bg-blue-600"}>{u.role}</Badge></td>
-                    <td className="px-6 md:px-10 py-4 md:py-6"><span className="text-[10px] font-bold text-blue-800 uppercase tracking-widest">Active</span></td>
-                    <td className="px-6 md:px-10 py-4 md:py-6">
-                       <button 
-                        onClick={() => setSelectedUser(u)} 
-                        className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-slate-100 group-hover:bg-blue-600 group-hover:text-white rounded-lg md:rounded-xl transition-all font-black text-[9px] md:text-[10px] uppercase tracking-widest whitespace-nowrap"
-                       >
-                         <Eye className="w-4 h-4" /> Full Profile
-                       </button>
-                    </td>
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  <input
+                    value={userFilter}
+                    onChange={e => setUserFilter(e.target.value)}
+                    placeholder="Search users..."
+                    className="w-full md:w-80 bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <button
+                    onClick={() => {
+                      const csv = [
+                        ['Name', 'Email', 'Role', 'Created At'],
+                        ...filteredUsers.map(u => [u.name, u.email, u.role, u.createdAt]),
+                      ];
+                      const blob = new Blob([csv.map(r => r.map(c => `\"${String(c).replace(/\"/g, '""')}\"`).join(',')).join('\n')], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'users.csv';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+                <div className="text-xs text-slate-500">{loadingAdminData ? 'Refreshing...' : `Loaded ${filteredUsers.length} users`}</div>
+              </div>
+              <table className="w-full text-left min-w-full md:min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-slate-50">
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Registrant</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Role</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredUsers.map((u: User) => (
+                    <tr key={u.id} className="hover:bg-amber-50 transition-colors group">
+                      <td className="px-6 md:px-10 py-4 md:py-6">
+                        <p className="font-black text-blue-900 text-xs md:text-sm">{u.name}</p>
+                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">{u.email}</p>
+                      </td>
+                      <td className="px-6 md:px-10 py-4 md:py-6"><Badge color={u.role === UserRole.Admin ? "bg-slate-950" : "bg-blue-600"}>{u.role}</Badge></td>
+                      <td className="px-6 md:px-10 py-4 md:py-6"><span className="text-[10px] font-bold text-blue-800 uppercase tracking-widest">Active</span></td>
+                      <td className="px-6 md:px-10 py-4 md:py-6">
+                        <button 
+                          onClick={() => setSelectedUser(u)} 
+                          className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-slate-100 group-hover:bg-blue-600 group-hover:text-white rounded-lg md:rounded-xl transition-all font-black text-[9px] md:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                        >
+                          <Eye className="w-4 h-4" /> Full Profile
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           {activeTab === 'ledger' && (
-            <table className="w-full text-left min-w-[600px]">
-              <thead>
-                <tr className="border-b border-slate-50">
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Trans ID</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Total Investment</th>
-                  <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Fulfillment</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {orders.map((o: any) => (
-                  <tr key={o.id} className="hover:bg-amber-50 transition-colors">
-                    <td className="px-6 md:px-10 py-4 md:py-6 font-mono font-bold text-[10px] md:text-xs text-blue-800">{o.id}</td>
-                    <td className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">
-                      {new Date(o.createdAt).toLocaleDateString()} @ {new Date(o.createdAt).toLocaleTimeString()}
-                    </td>
-                    <td className="px-6 md:px-10 py-4 md:py-6 font-black text-xs md:text-sm text-blue-900">₹{o.total.toLocaleString()}</td>
-                    <td className="px-6 md:px-10 py-4 md:py-6"><Badge color="bg-amber-500">{o.status}</Badge></td>
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                  <input
+                    value={orderFilter}
+                    onChange={e => setOrderFilter(e.target.value)}
+                    placeholder="Search orders..."
+                    className="w-full md:w-80 bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                  <select
+                    value={orderStatusFilter}
+                    onChange={e => setOrderStatusFilter(e.target.value as any)}
+                    className="w-full md:w-56 bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Placed">Placed</option>
+                    <option value="Packed">Packed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500">{loadingAdminData ? 'Refreshing...' : `Showing ${filteredOrders.length} orders`}</span>
+                  <button
+                    onClick={() => {
+                      const csv = [
+                        ['Order ID', 'User ID', 'Total', 'Status', 'Created At', 'Delivery Date'],
+                        ...filteredOrders.map(o => [
+                          o.id,
+                          o.user_id,
+                          o.total,
+                          o.status,
+                          o.createdAt,
+                          o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : '',
+                        ]),
+                      ];
+                      const blob = new Blob([csv.map(r => r.map(c => `\"${String(c).replace(/\"/g, '""')}\"`).join(',')).join('\n')], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'orders.csv';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              <table className="w-full text-left min-w-full md:min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-slate-50">
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Trans ID</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Total Investment</th>
+                    <th className="px-6 md:px-10 py-6 md:py-8 text-[10px] font-black uppercase tracking-widest text-slate-400">Fulfillment</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredOrders.map((o: any) => (
+                    <tr key={o.id} className="hover:bg-amber-50 transition-colors">
+                      <td className="px-6 md:px-10 py-4 md:py-6 font-mono font-bold text-[10px] md:text-xs text-blue-800">{o.id}</td>
+                      <td className="px-6 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">
+                        {new Date(o.createdAt).toLocaleDateString()} @ {new Date(o.createdAt).toLocaleTimeString()}
+                      </td>
+                      <td className="px-6 md:px-10 py-4 md:py-6 font-black text-xs md:text-sm text-blue-900">₹{o.total.toLocaleString()}</td>
+                      <td className="px-6 md:px-10 py-4 md:py-6"><Badge color="bg-amber-500">{o.status}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           {activeTab === 'products' && (
             <div className="p-6 md:p-10">
@@ -1941,16 +2313,17 @@ const AdminDashboard = ({ users, orders, sessions, products, setProducts, onLogo
 
 // --- Auth Views ---
 
-const AuthView = ({ mode, onAuth, onToggle }: { mode: 'login' | 'signup', onAuth: any, onToggle: () => void }) => {
+const AuthView = ({ mode, onAuth, onToggle, admin, onSwitch, switchLabel, onBack }: { mode: 'login' | 'signup', onAuth: any, onToggle: () => void, admin?: boolean, onSwitch?: () => void, switchLabel?: string, onBack?: () => void }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
+  const [adminKey, setAdminKey] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'signup') onAuth(name, email, pass);
-    else onAuth(email, pass);
+    if (mode === 'signup') onAuth(name, email, pass, adminKey);
+    else onAuth(email, pass, adminKey);
   };
 
   return (
@@ -1998,33 +2371,47 @@ const AuthView = ({ mode, onAuth, onToggle }: { mode: 'login' | 'signup', onAuth
         <div className="w-full md:w-7/12 p-8 md:p-16 lg:p-20 flex flex-col items-center">
           <div className="w-full max-w-md">
             <div className="flex flex-col items-center md:items-start text-center md:text-left mb-10 md:mb-12">
-               <div className="md:hidden bg-slate-950 w-16 h-16 rounded-[24px] flex items-center justify-center mb-6 text-white shadow-xl rotate-12">
-                  {mode === 'login' ? <LogIn className="w-8 h-8" /> : <UserPlus className="w-8 h-8" />}
+               <div className="flex items-center justify-between w-full md:w-auto">
+                 <div className="md:hidden bg-slate-950 w-16 h-16 rounded-[24px] flex items-center justify-center mb-6 text-white shadow-xl rotate-12">
+                   {mode === 'login' ? <LogIn className="w-8 h-8" /> : <UserPlus className="w-8 h-8" />}
+                 </div>
+                 {onBack && (
+                   <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 bg-slate-900/80 text-white rounded-full font-black uppercase tracking-widest hover:bg-slate-900 transition-colors">
+                     <ChevronLeft className="w-4 h-4" />
+                     Back
+                   </button>
+                 )}
                </div>
                <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1] md:leading-[0.9] text-blue-900 mb-4">
-                 {mode === 'login' ? 'Welcome Back.' : 'Join the Collective.'}
+                 {admin ? (mode === 'login' ? 'Admin Portal Access' : 'Admin Registration') : (mode === 'login' ? 'Welcome Back.' : 'Join the Collective.')}
                </h2>
                <p className="text-slate-500 text-sm font-medium">
-                 {mode === 'login' ? 'Initialize your session to continue browsing.' : 'Create your decentralized identity node.'}
+                 {admin
+                   ? (mode === 'login'
+                      ? 'Enter your admin credentials to access the control panel.'
+                      : 'Register an admin identity (requires admin email).')
+                   : (mode === 'login'
+                      ? 'Initialize your session to continue browsing.'
+                      : 'Create your decentralized identity node.')}
                </p>
             </div>
 
-            {mode === 'login' && (
+            {admin && mode === 'login' && (
                <div className="bg-amber-50 p-5 rounded-[28px] border border-amber-200 mb-10 group hover:border-blue-200 transition-all">
                  <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center text-blue-800">
                        <ShieldCheck className="w-4 h-4" />
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Admin Entry</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin Credentials</p>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                        <span className="text-xs font-black text-blue-900 block">admin@clickbazaar.com</span>
-                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Login Identity</span>
+                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Login Email</span>
                     </div>
                     <div className="space-y-1">
                        <span className="text-xs font-black text-blue-900 block">admin123</span>
-                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Secret Password</span>
+                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Sample Password</span>
                     </div>
                  </div>
                </div>
@@ -2063,6 +2450,18 @@ const AuthView = ({ mode, onAuth, onToggle }: { mode: 'login' | 'signup', onAuth
                 </div>
               </div>
 
+              {admin && (
+                <div className="group">
+                  <div className={`flex items-center gap-4 bg-amber-50 border-2 rounded-[24px] px-6 py-4 transition-all ${focusedField === 'adminKey' ? 'bg-amber-50 border-blue-600 ring-4 ring-blue-50' : 'border-transparent'}`}>
+                    <Key className={`w-5 h-5 transition-colors ${focusedField === 'adminKey' ? 'text-blue-800' : 'text-slate-400'}`} />
+                    <div className="flex-1">
+                      <label className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 transition-colors ${focusedField === 'adminKey' ? 'text-blue-800' : 'text-slate-400'}`}>Admin Portal Key</label>
+                      <input type="password" placeholder="••••••••" value={adminKey} onFocus={() => setFocusedField('adminKey')} onBlur={() => setFocusedField(null)} onChange={e => setAdminKey(e.target.value)} className="w-full bg-transparent border-none outline-none font-black text-sm text-blue-900 p-0 placeholder:text-slate-300" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button type="submit" className="w-full bg-blue-600 text-white h-16 md:h-18 rounded-[24px] md:rounded-[32px] font-black text-base md:text-lg hover:bg-slate-950 transition-all shadow-xl shadow-red-500/20 active:scale-95 flex items-center justify-center gap-3 group mt-4">
                  {mode === 'login' ? 'Authenticate Access' : 'Register Identity'}
                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -2071,11 +2470,19 @@ const AuthView = ({ mode, onAuth, onToggle }: { mode: 'login' | 'signup', onAuth
 
             <div className="mt-12 text-center">
                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Network Protocols</p>
+               {admin && (
+                 <p className="text-xs text-amber-700 font-bold mb-3">Admin access only — use the designated admin credentials.</p>
+               )}
                <button onClick={onToggle} className="text-blue-900 font-black text-[11px] md:text-xs uppercase tracking-[0.2em] hover:text-blue-800 transition-colors flex items-center gap-3 mx-auto">
                  <div className="w-6 h-px bg-slate-200"></div>
                  {mode === 'login' ? 'Create New Collective Account' : 'Return to Identity Access'}
                  <div className="w-6 h-px bg-slate-200"></div>
                </button>
+               {onSwitch && switchLabel && (
+                 <button onClick={onSwitch} className="mt-4 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:text-blue-800 transition-colors">
+                   {switchLabel}
+                 </button>
+               )}
             </div>
           </div>
         </div>
@@ -2321,6 +2728,24 @@ const CheckoutPage = ({ cart, products, onComplete, onBack, onAdd, onRemove }: a
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-10 p-6 rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Order Summary</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm font-bold text-slate-700">
+                    <span>Subtotal</span>
+                    <span>₹{total.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold text-slate-700">
+                    <span>Shipping</span>
+                    <span className="text-slate-500">Calculated at checkout</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-black text-blue-900 border-t border-slate-200 pt-3">
+                    <span>Total</span>
+                    <span>₹{total.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-8 bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
