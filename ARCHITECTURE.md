@@ -435,10 +435,10 @@ flowchart LR
     D1 --> B7
     B7 --> F5
 
-    classDef frontend fill:#e1f5fe,stroke:#01579b
-    classDef backend fill:#f3e5f5,stroke:#4a148c
-    classDef database fill:#e8f5e8,stroke:#1b5e20
-    classDef email fill:#fff3e0,stroke:#e65100
+    classDef frontend fill:#e1f5fe,stroke:#01579b,color:#000000
+    classDef backend fill:#f3e5f5,stroke:#4a148c,color:#000000
+    classDef database fill:#e8f5e8,stroke:#1b5e20,color:#000000
+    classDef email fill:#fff3e0,stroke:#e65100,color:#000000
 
     class F1,F2,F3,F4,F5 frontend
     class B1,B2,B3,B4,B5,B6,B7 backend
@@ -462,10 +462,10 @@ flowchart TD
     J --> K[User receives confirmation]
     K --> L[Order status: pending]
 
-    classDef frontend fill:#e1f5fe,stroke:#01579b
-    classDef backend fill:#f3e5f5,stroke:#4a148c
-    classDef database fill:#e8f5e8,stroke:#1b5e20
-    classDef email fill:#fff3e0,stroke:#e65100
+    classDef frontend fill:#e1f5fe,stroke:#01579b,color:#000000
+    classDef backend fill:#f3e5f5,stroke:#4a148c,color:#000000
+    classDef database fill:#e8f5e8,stroke:#1b5e20,color:#000000
+    classDef email fill:#fff3e0,stroke:#e65100,color:#000000
 
     class A,B,C,D frontend
     class E,F,G,I backend
