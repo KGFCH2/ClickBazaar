@@ -491,9 +491,9 @@ flowchart LR
     J --> K[Return to frontend]
     K --> L[Display in chat UI]
 
-    classDef frontend fill:#e1f5fe,stroke:#01579b
-    classDef backend fill:#f3e5f5,stroke:#4a148c
-    classDef ai fill:#fff3e0,stroke:#e65100
+    classDef frontend fill:#e1f5fe,stroke:#01579b,color:#000000
+    classDef backend fill:#f3e5f5,stroke:#4a148c,color:#000000
+    classDef ai fill:#fff3e0,stroke:#e65100,color:#000000
 
     class A,B,C frontend
     class D,E,J backend
