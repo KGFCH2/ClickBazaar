@@ -146,6 +146,7 @@ graph TD
 ## 🔐 Authentication & Security Flow
 
 ```mermaid
+%%{init: {'theme': 'neutral', 'themeVariables': { 'textColor': '#000000', 'mainBkg': '#ffffff', 'secondBkg': '#f8f8f8', 'border1': '#000000', 'border2': '#000000', 'arrowheadColor': '#000000', 'labelColor': '#000000' }}}%%
 sequenceDiagram
     participant U as 👤 User
     participant F as 🎨 Frontend
